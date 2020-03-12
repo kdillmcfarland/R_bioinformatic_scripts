@@ -160,7 +160,7 @@ make.modules <- function(voom.dat,
             paste(dir.results, "/genes_in_mod.csv", sep=""))
   
   #Genes in module, DAVID format
-  source("https://github.com/kdillmcfarland/R_bioinformatic_scripts/blob/master/convert_to_DAVID.R")
+  source("https://raw.githubusercontent.com/kdillmcfarland/R_bioinformatic_scripts/master/convert_to_DAVID.R")
   convert_to_DAVID(voom.dat=voom.mods,
                    mod.net=mod.net,
                    genes.in.mod=mods,
