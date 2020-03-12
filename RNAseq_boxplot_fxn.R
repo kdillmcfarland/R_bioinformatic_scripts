@@ -1,0 +1,222 @@
+"Boxplots of expression of a list of genes or modules
+
+Saves individual PDF boxplots of gene/module expression by variables of
+interest.
+
+#################
+
+Kim Dill-Mcfarland
+University of Washington, kadm@uw.edu
+Copyright (C) 2020 Kim Dill-Mcfarland
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Input parameters:
+REQUIRED
+  voom.dat = Filepath to .csv containing voom normalized counts. ALL 
+             genes/modules in this file will be plotted. Therefore, 
+             if subset is desired, do so before inputting into this
+             function
+  pval.dat = Filepath to .csv containing limma results output by
+             'extract.pval.R'
+  meta.dat = Filepath to .csv containing metadata
+  vars = Character vector of variables in meta.dat to plot
+  outdir = Filepath to directory to save results
+
+OPTIONAL
+   interaction = Logical if should plot interaction of 2 vars. Default
+                 is FALSE
+   color.var = Variable in meta.dat to color points in plots. Default 
+               is NULL
+   colors = If color.var=TRUE, list of colors to use. Must be same
+            length as levels of color.var
+   name = Character string to prepend to output names. Default is NULL
+   gene.key = Filepath to Ensembl gene key to name genes in plots.
+              Generally 'EnsemblToHGNC_GRCh38.txt'. Default is NULL
+   cores = Number of parallel cores to use. Default is 1
+   
+Example
+  plot.all(voom.dat='P259.2_genes_toPlot.csv', 
+         pval.dat='P259.2.gene.pval.interact.csv', 
+         meta.dat='P259_all_metadata.csv', 
+         gene.key='EnsemblToHGNC_GRCh38.txt',
+              vars=c('drug','virus'),
+              interaction=TRUE,
+              color.var='donorID', 
+              colors=samp.cols,
+              outdir='figs/gene_P259.2/', 
+              name='P259.2_expression_',
+              cores=3)
+"
+
+#################
+plot.all <- function(voom.dat, pval.dat, meta.dat, 
+                          vars,
+                          interaction=FALSE,
+                          color.var=NULL, colors=NULL,
+                          outdir=NULL, name=NULL, 
+                          gene.key=NULL,
+                          cores=1){
+########## SETUP ########## 
+# Data manipulation and figures
+library(tidyverse)
+# Multi-panel figures for ggplot
+library(cowplot)
+#Set seed
+set.seed(4389)
+
+########## Load data ########## 
+#Select only variables of interest
+voom.dat <- read_csv(voom.dat)
+
+pval.dat <- read_csv(pval.dat) %>% 
+  dplyr::select(1, adj.P.Val, group)
+
+meta.dat <- read_csv(meta.dat) %>% 
+  dplyr::select(libID, color.var, vars)
+
+#Rename 1st column to match
+colnames(pval.dat)[1] <- "gene"
+colnames(voom.dat)[1] <- "gene"
+  
+# combine logCPM, meta, and pval data
+plot.dat <- voom.dat %>% 
+  pivot_longer(-1, names_to = "libID", 
+               values_to = "voom.count") %>% 
+  left_join(meta.dat, by="libID") %>% 
+  left_join(pval.dat, by="gene") %>% 
+  mutate(color.var = factor(get(color.var))) %>% 
+  mutate_at(vars(vars), ~fct_relevel(., "none", after = 0))
+
+#List all genes/modules
+to_plot <- sort(unique(plot.dat$gene))
+
+# Setup parallel computing
+library(doParallel)
+library(foreach)
+registerDoParallel(cores=cores)
+
+# Loop through genes to create plots
+foreach(i = 1:length(to_plot)) %dopar% {
+  print(i)
+  
+  #Subset data to gene/module of interest
+  plot.dat.sub <- plot.dat %>% 
+    filter(gene == to_plot[i])
+  
+  #### PLOTS ####
+  plot_list = list()
+  #Regular variables
+  for(j in 1:length(vars)){
+    #List levels of variable of interest
+    var.levels <- plot.dat.sub %>% 
+      select(vars[j]) %>% 
+      distinct() %>% 
+      unlist(use.names = FALSE)
+    
+    #Filter data to fdr values for levels assoc with variable of interest
+    plot.dat.sub2 <- plot.dat.sub %>% 
+      filter(group %in% var.levels |
+             group == vars[j])
+    
+    plot.title <- paste("FDR=", formatC(unique(plot.dat.sub2$adj.P.Val), 
+                  format = "e", digits = 4), sep="")
+    
+    plot1 <- plot.dat.sub2 %>% 
+      ggplot(aes_string(x=vars[j], y="voom.count")) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(aes(color=color.var), height=0, width=0.2) +
+      theme_classic() +
+      labs(title=plot.title, y="Normalized log2 expression",
+           x="") +
+      theme(legend.position = "none", plot.title = element_text(size=9)) +
+      scale_color_manual(values=colors)
+    
+    plot_list[[j]] <- plot1
+  }
+  
+  #Interaction variable
+  if(interaction){
+    #List all interactions
+    var.levels <- plot.dat.sub %>% 
+      select(vars[1],vars[2]) %>% 
+      distinct() %>% 
+      mutate(interaction = paste(get(vars[1]), get(vars[2]), sep=":")) %>% 
+      select(interaction) %>% 
+      unlist(use.names = FALSE)
+    
+    #Create FDR plot title if exists in the data
+    if(any(var.levels %in% plot.dat.sub$group)){
+      plot.dat.sub2 <- plot.dat.sub %>% 
+        filter(grepl(":", group))
+      
+      plot.title <- paste("FDR=", formatC(unique(plot.dat.sub2$adj.P.Val), 
+                          format = "e", digits = 4), sep="")
+    } else{
+      plot.dat.sub2 <- plot.dat.sub %>% 
+        select(-adj.P.Val,-group) %>% 
+        distinct()
+      
+      plot.title <- " "
+    }
+    
+    #Interaction plot
+    plot2 <- plot.dat.sub2 %>% 
+      ggplot(aes(x=get(vars[1]):get(vars[2]), y=voom.count)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(aes(color=color.var), height=0, width=0.2) +
+      theme_classic() +
+      labs(title=plot.title, y="Normalized log2 expression",
+           x="") +
+      theme(legend.position = "right",
+            plot.title = element_text(size=9)) +
+      scale_color_manual(values=colors, name="Donor")
+    }
+    
+  #### Combine plots ####
+  if (!is.null(gene.key)){
+    gene.key <- read_tsv(gene.key) %>% 
+      filter(ensembl_gene_id %in% plot.dat.sub$gene)
+    
+    plot_row0 <- ggdraw() + 
+      draw_label(paste(to_plot[i], unique(gene.key$hgnc_symbol), sep=" "),
+                 fontface='bold', x=0, hjust=0, vjust=4) +
+      theme(plot.margin = margin(0, 0, 0, 7))
+  } else{
+    plot_row0 <- ggdraw() + 
+      draw_label(to_plot[i],
+                 fontface='bold', x=0, hjust=0, vjust=4) +
+      theme(plot.margin = margin(0, 0, 0, 7))
+  }
+  
+  plot_row1 <- plot_grid(plot_list[[1]], plot_list[[2]],
+                         align="hv", nrow=1)
+  plot_final <- plot_grid(plot_row0, plot_row1, plot2,
+                          nrow=3, 
+                          rel_heights = c(.4,1,1))
+  
+  #### Save to disk
+  #### Include gene name if desired
+  if (!is.null(gene.key)){
+    filename <- paste(outdir, name,
+                      unique(plot.dat.sub[,1]), "_",
+                      unique(gene.key$hgnc_symbol),
+                      ".pdf", sep="")
+    ggsave(filename, plot_final, width=6, height=7)
+  } else{
+    filename <- paste(outdir, name,
+                      unique(plot.dat.sub[,1]), ".pdf", sep="")
+    ggsave(filename, plot_final, width=6, height=7)
+  }
+}
+
+print("All plots complete.")
+}
