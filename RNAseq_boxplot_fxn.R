@@ -32,15 +32,15 @@ REQUIRED
              voom.dat is csv, not voom object
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
+  color.var = Variable in voom.dat$targets OR meta.dat to color points
+              in plots
   outdir = Filepath to directory to save results
 
 OPTIONAL
    interaction = Logical if should plot interaction of 2 vars. Default
                  is FALSE
-   color.var = Variable in meta.dat to color points in plots. Default 
-               is NULL
-   colors = If color.var=TRUE, list of colors to use. Must be same
-            length as levels of color.var
+   colors = If do not want to use default ggplot colors, list of colors
+            to use. Must be same length as levels of color.var
    name = Character string to prepend to output names. Default is NULL
    gene.key = Filepath to Ensembl gene key to name genes in plots.
               Generally 'EnsemblToHGNC_GRCh38.txt'. Default is NULL
@@ -162,10 +162,14 @@ foreach(i = 1:length(to_plot)) %dopar% {
       theme_classic() +
       labs(title=plot.title, y="Normalized log2 expression",
            x="") +
-      theme(legend.position = "none", plot.title = element_text(size=9)) +
-      scale_color_manual(values=colors)
+      theme(legend.position = "none", plot.title = element_text(size=9))
     
-    plot_list[[j]] <- plot1
+    if(is.null(colors)){
+      plot_list[[j]] <- plot1
+    } else{
+      plot1 <- plot1 + scale_color_manual(values=colors)
+      plot_list[[j]] <- plot1
+    }
   }
   
   #Interaction variable
@@ -202,8 +206,13 @@ foreach(i = 1:length(to_plot)) %dopar% {
       labs(title=plot.title, y="Normalized log2 expression",
            x="") +
       theme(legend.position = "right",
-            plot.title = element_text(size=9)) +
-      scale_color_manual(values=colors, name="Donor")
+            plot.title = element_text(size=9))
+    
+    if(is.null(colors)){
+      plot2 <- plot2
+    } else{
+      plot2 <- plot2 + scale_color_manual(values=colors)
+    }
     }
     
   #### Combine plots ####
