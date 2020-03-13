@@ -22,14 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Input parameters:
 REQUIRED
   voom.dat = Filepath to .csv or name of object in environment 
-             containing voom normalized counts. 
-             ALL genes/modules in this file will be plotted. Therefore, 
-             if subset is desired, do so before inputting into this
-             function
+             containing voom normalized counts.
   pval.dat = Filepath to .csv or name of object in environment 
              containing limma results output by 'extract.pval.R'
   meta.dat = Filepath to .csv containing metadata. Only required if 
              voom.dat is csv, not voom object
+  genes_toPlot = Character vector listing genes to plot
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
   color.var = Variable in voom.dat$targets OR meta.dat to color points
@@ -62,7 +60,7 @@ Example
 
 #################
 plot.all <- function(voom.dat, pval.dat, meta.dat, 
-                          vars,
+                     genes.toPlot, vars,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
                           outdir=NULL, name=NULL, 
@@ -79,9 +77,12 @@ set.seed(4389)
 ########## Load data ########## 
 #Voom normalized counts
 if(is.character(voom.dat)){
-  voom.dat.loaded <- read_csv(voom.dat)
+  voom.dat.loaded <- read_csv(voom.dat) %>% 
+    filter(.[[1]] %in% genes.toPlot)
 } else if(class(voom.dat) == "EList"){
-  voom.dat.loaded <- as.data.frame(voom.dat$E)
+  voom.dat.loaded <- as.data.frame(voom.dat$E) %>% 
+    rownames_to_column() %>% 
+    filter(rowname %in% genes.toPlot)
 } else {
   stop("Voom data must be CSV on disk or EList object in environment")
 }
@@ -89,10 +90,12 @@ if(is.character(voom.dat)){
 #Pvalues
 if(is.character(pval.dat)){
   pval.dat.loaded <- read_csv(pval.dat) %>% 
-    dplyr::select(1, adj.P.Val, group)
+    dplyr::select(1, adj.P.Val, group) %>% 
+    filter(.[[1]] %in% genes.toPlot)
 } else if(class(pval.dat) == "data.frame"){
   pval.dat.loaded <- pval.dat %>% 
-    dplyr::select(1, adj.P.Val, group)
+    dplyr::select(1, adj.P.Val, group)%>% 
+    filter(.[[1]] %in% genes.toPlot)
 } else {
   stop("P-value data must be CSV on disk or data frame in environment")
 }
