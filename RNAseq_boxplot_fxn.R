@@ -79,19 +79,19 @@ set.seed(4389)
 ########## Load data ########## 
 #Voom normalized counts
 if(is.character(voom.dat)){
-  voom.dat <- read_csv(voom.dat)
+  voom.dat.loaded <- read_csv(voom.dat)
 } else if(class(voom.dat) == "EList"){
-  voom.dat <- voom.dat
+  voom.dat.loaded <- as.data.frame(voom.dat$E)
 } else {
   stop("Voom data must be CSV on disk or EList object in environment")
 }
 
 #Pvalues
 if(is.character(pval.dat)){
-  pval.dat <- read_csv(pval.dat) %>% 
+  pval.dat.loaded <- read_csv(pval.dat) %>% 
     dplyr::select(1, adj.P.Val, group)
 } else if(class(pval.dat) == "data.frame"){
-  pval.dat <- pval.dat %>% 
+  pval.dat.loaded <- pval.dat %>% 
     dplyr::select(1, adj.P.Val, group)
 } else {
   stop("P-value data must be CSV on disk or data frame in environment")
@@ -99,25 +99,25 @@ if(is.character(pval.dat)){
 
 #Metadata
 if(class(voom.dat) == "EList"){
-  meta.dat <- as.data.frame(voom.dat$targets) %>% 
+  meta.dat.loaded <- as.data.frame(voom.dat$targets) %>% 
     dplyr::select(libID, color.var, vars)
 } else if(is.character(meta.dat)){
-  meta.dat <- read_csv(meta.dat) %>% 
+  meta.dat.loaded <- read_csv(meta.dat) %>% 
     dplyr::select(libID, color.var, vars)
 } else {
   stop("Metadata must be CSV on disk or part of EList voom object in environment.")
 }
 
 #Rename 1st column to match
-colnames(pval.dat)[1] <- "gene"
-colnames(voom.dat)[1] <- "gene"
+colnames(pval.dat.loaded)[1] <- "gene"
+colnames(voom.dat.loaded)[1] <- "gene"
   
 # combine logCPM, meta, and pval data
-plot.dat <- voom.dat %>% 
+plot.dat <- voom.dat.loaded %>% 
   pivot_longer(-1, names_to = "libID", 
                values_to = "voom.count") %>% 
-  left_join(meta.dat, by="libID") %>% 
-  left_join(pval.dat, by="gene") %>% 
+  left_join(meta.dat.loaded, by="libID") %>% 
+  left_join(pval.dat.loaded, by="gene") %>% 
   mutate(color.var = factor(get(color.var))) %>% 
   mutate_at(vars(vars), ~fct_relevel(., "none", after = 0))
 
