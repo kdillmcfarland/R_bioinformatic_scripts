@@ -230,6 +230,7 @@ foreach(i = 1:length(to_plot)) %dopar% {
   
   #### Save to disk
   #### Include gene name if desired
+  dir.create(path=outdir, showWarnings = FALSE)
   if (!is.null(gene.key)){
     filename <- paste(outdir, name,
                       unique(plot.dat.sub[,1]), "_",
