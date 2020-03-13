@@ -80,7 +80,7 @@ extract.pval <- function(model, voom.dat, eFit,
                             number=nrow(voom.dat),
                             adjust.method = "BH")
     
-    if ("geneName" %in% colnames()){
+    if ("geneName" %in% colnames(pval.temp)){
       pval.temp <- pval.temp %>% 
         mutate(group = vars[var]) %>% 
         # Add categorical var for DE
