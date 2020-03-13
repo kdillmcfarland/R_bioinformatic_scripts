@@ -27,7 +27,7 @@ REQUIRED
              containing limma results output by 'extract.pval.R'
   meta.dat = Filepath to .csv containing metadata. Only required if 
              voom.dat is csv, not voom object
-  genes_toPlot = Character vector listing genes to plot
+  genes.toPlot = Character vector listing genes to plot
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
   color.var = Variable in voom.dat$targets OR meta.dat to color points
@@ -45,9 +45,10 @@ OPTIONAL
    cores = Number of parallel cores to use. Default is 1
    
 Example
-  plot.all(voom.dat='P259.2_genes_toPlot.csv', 
+  plot.all(voom.dat='P259.2_voom.counts.csv', 
          pval.dat='P259.2.gene.pval.interact.csv', 
          meta.dat='P259_all_metadata.csv', 
+         genes.ToPlot=c('gene1', 'gene2'),
          gene.key='EnsemblToHGNC_GRCh38.txt',
               vars=c('drug','virus'),
               interaction=TRUE,
