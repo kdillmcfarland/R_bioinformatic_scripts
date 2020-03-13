@@ -1,7 +1,46 @@
+"Clean default BRI RNA-seq data outputs
+
+Includes 'Final Annotation.xlsx', 'combined_summary-data.csv', and
+'combined_counts.csv'
+
+#################
+
+Kim Dill-Mcfarland
+University of Washington, kadm@uw.edu
+Copyright (C) 2020 Kim Dill-Mcfarland
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Input parameters:
+REQUIRED
+  data.dir = Filepath to directory containg all files
+                         
+OPTIONAL
+  anno.cols = Columns to extract from annotation file
+              Default is c('Proj-Sub...1', 'Donor ID', 
+              'Study Group', 'Date Collected',
+              'Sample Id', 'cDNA sampleId','library sampleId')
+  summ.cols = Columns to extract from summary file
+              Default is c('libId', 'fastq_total_reads', 'total_reads',
+              'total_sequences', 'total_counts', 'median_cv_coverage',
+              'mapped_reads_w_dups', 'predicted_sex')
+"
+
+#################
+
 clean.RNAseq <- function(
   data.dir=NULL,
   #Default lists of column names
-  anno.cols=c("Proj-Sub...1", "Donor ID", "Study Group", "Date Collected",
+  anno.cols=c("Proj-Sub...1", "Donor ID", 
+              "Study Group", "Date Collected",
               "Sample Id", "cDNA sampleId","library sampleId"),
   summ.cols=c("libId", "fastq_total_reads", "total_reads",
               "total_sequences", "total_counts", "median_cv_coverage",
