@@ -21,14 +21,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Input parameters:
 REQUIRED
-  voom.dat = Filepath to .csv containing voom normalized counts. ALL 
-             genes/modules in this file will be plotted. Therefore, 
+  voom.dat = Filepath to .csv or name of object in environment 
+             containing voom normalized counts. 
+             ALL genes/modules in this file will be plotted. Therefore, 
              if subset is desired, do so before inputting into this
              function
-  pval.dat = Filepath to .csv containing limma results output by
-             'extract.pval.R'
-  meta.dat = Filepath to .csv containing metadata
-  vars = Character vector of variables in meta.dat to plot
+  pval.dat = Filepath to .csv or name of object in environment 
+             containing limma results output by 'extract.pval.R'
+  meta.dat = Filepath to .csv containing metadata. Only required if 
+             voom.dat is csv, not voom object
+  vars = Character vector of variables in voom.dat$targets OR meta.dat
+         to plot
   outdir = Filepath to directory to save results
 
 OPTIONAL
@@ -74,14 +77,36 @@ library(cowplot)
 set.seed(4389)
 
 ########## Load data ########## 
-#Select only variables of interest
-voom.dat <- read_csv(voom.dat)
+#Voom normalized counts
+if(is.character(voom.dat)){
+  voom.dat <- read_csv(voom.dat)
+} else if(class(voom.dat) == "EList"){
+  voom.dat <- voom.dat
+} else {
+  stop("Voom data must be CSV on disk or EList object in environment")
+}
 
-pval.dat <- read_csv(pval.dat) %>% 
-  dplyr::select(1, adj.P.Val, group)
+#Pvalues
+if(is.character(pval.dat)){
+  pval.dat <- read_csv(pval.dat) %>% 
+    dplyr::select(1, adj.P.Val, group)
+} else if(class(pval.dat) == "data.frame"){
+  pval.dat <- pval.dat %>% 
+    dplyr::select(1, adj.P.Val, group)
+} else {
+  stop("P-value data must be CSV on disk or data frame in environment")
+}
 
-meta.dat <- read_csv(meta.dat) %>% 
-  dplyr::select(libID, color.var, vars)
+#Metadata
+if(class(voom.dat) == "EList"){
+  meta.dat <- as.data.frame(voom.dat$targets) %>% 
+    dplyr::select(libID, color.var, vars)
+} else if(is.character(meta.dat)){
+  meta.dat <- read_csv(meta.dat) %>% 
+    dplyr::select(libID, color.var, vars)
+} else {
+  stop("Metadata must be CSV on disk or part of EList voom object in environment.")
+}
 
 #Rename 1st column to match
 colnames(pval.dat)[1] <- "gene"
