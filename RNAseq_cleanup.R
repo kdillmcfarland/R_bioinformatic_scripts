@@ -101,10 +101,9 @@ clean.RNAseq <- function(
     gsub("//", "/", .)
   #Load file
   counts <- read_csv(count.file)
-  
   #Remove flowcell ID from column names
   counts.format <- counts %>% 
-    set_names(~gsub("_.*", "", names(counts))) %>% 
+    set_names(gsub("_.*", "", names(counts))) %>% 
     select(geneName, meta.clean$libID)
   #Save to environment
   assign("counts", counts.format, envir = .GlobalEnv)
