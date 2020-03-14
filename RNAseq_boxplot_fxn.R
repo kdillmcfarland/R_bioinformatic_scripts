@@ -26,7 +26,7 @@ REQUIRED
   pval.dat = Filepath to .csv or name of object in environment 
              containing limma results output by 'extract.pval.R'
   meta.dat = Filepath to .csv containing metadata. Only required if 
-             voom.dat is csv, not voom object
+             voom.dat is NOT a voom object
   genes.toPlot = Character vector listing genes to plot
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
@@ -86,8 +86,12 @@ if(is.character(voom.dat)){
   voom.dat.loaded <- as.data.frame(voom.dat$E) %>% 
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
+} else if(class(voom.dat) == "data.frame"){
+  voom.dat.loaded <- voom.mods %>% 
+    rownames_to_column() %>% 
+    filter(rowname %in% genes.toPlot)
 } else {
-  stop("Voom data must be CSV on disk or EList object in environment")
+  stop("Voom data must be CSV on disk or EList/data.frame object in environment")
 }
 
 #Pvalues
@@ -100,7 +104,7 @@ if(is.character(pval.dat)){
     dplyr::select(1, adj.P.Val, group)%>% 
     filter(.[[1]] %in% genes.toPlot)
 } else {
-  stop("P-value data must be CSV on disk or data frame in environment")
+  stop("P-value data must be CSV on disk or data.frame in environment")
 }
 
 #Metadata
@@ -110,8 +114,11 @@ if(class(voom.dat) == "EList"){
 } else if(is.character(meta.dat)){
   meta.dat.loaded <- read_csv(meta.dat) %>% 
     dplyr::select(libID, color.var, vars)
+} else if(class(meta.dat) == "data.frame"){
+  meta.dat.loaded <- meta.dat %>% 
+    dplyr::select(libID, color.var, vars)
 } else {
-  stop("Metadata must be CSV on disk or part of EList voom object in environment.")
+  stop("Metadata must be CSV on disk or part of EList/data.frame object in environment.")
 }
 
 ########## Format data ########## 
