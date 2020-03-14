@@ -261,7 +261,7 @@ foreach(i = 1:length(to_plot)) %dopar% {
     } else{
       plot2 <- plot2 + scale_color_manual(values=colors)
     }
-    }
+    } else{plot2 <- NULL}
     
   #### Combine plots ####
   if (!is.null(gene.key)){
@@ -279,11 +279,18 @@ foreach(i = 1:length(to_plot)) %dopar% {
       theme(plot.margin = margin(0, 0, 0, 7))
   }
   
-  plot_row1 <- plot_grid(plot_list[[1]], plot_list[[2]],
+  plot_row1 <- plot_grid(plotlist = plot_list,
                          align="hv", nrow=1)
-  plot_final <- plot_grid(plot_row0, plot_row1, plot2,
-                          nrow=3, 
-                          rel_heights = c(.4,1,1))
+  
+  if(!is.null(plot2)){
+    plot_final <- plot_grid(plot_row0, plot_row1, plot2,
+                            nrow=3, 
+                            rel_heights = c(.4,1,1))
+  } else{
+    plot_final <- plot_grid(plot_row0, plot_row1,
+                            nrow=2, 
+                            rel_heights = c(.4,1))
+  }
   
   #### Save to disk
   #### Include gene name if desired
