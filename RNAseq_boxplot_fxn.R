@@ -33,6 +33,7 @@ REQUIRED
   color.var = Variable in voom.dat$targets OR meta.dat to color points
               in plots
   outdir = Filepath to directory to save results
+  width, height = Dimensions of saved plot
 
 OPTIONAL
    interaction = Logical if should plot interaction of FIRST 2 vars.
@@ -67,7 +68,7 @@ plot.all <- function(voom.dat, pval.dat, meta.dat,
                           color.var=NULL, colors=NULL,
                           outdir=NULL, name=NULL, 
                           gene.key=NULL,
-                          cores=1){
+                          cores=1, width, height){
 ########## SETUP ########## 
 # Data manipulation and figures
 library(tidyverse)
@@ -177,8 +178,7 @@ foreach(i = 1:length(to_plot)) %dopar% {
         geom_boxplot(outlier.shape = NA) +
         geom_jitter(aes(color=color.var), height=0, width=0.2) +
         theme_classic() +
-        labs(title=plot.title, y="Normalized log2 expression",
-             x="") +
+        labs(title=plot.title, y="Normalized log2 expression") +
         theme(legend.position = "none", 
               plot.title = element_text(size=9))
       
@@ -300,11 +300,11 @@ foreach(i = 1:length(to_plot)) %dopar% {
                       unique(plot.dat.sub[,1]), "_",
                       unique(gene.key$hgnc_symbol),
                       ".pdf", sep="")
-    ggsave(filename, plot_final, width=6, height=7)
+    ggsave(filename, plot_final, width=width, height=height)
   } else{
     filename <- paste(outdir, name,
                       unique(plot.dat.sub[,1]), ".pdf", sep="")
-    ggsave(filename, plot_final, width=6, height=7)
+    ggsave(filename, plot_final, width=width, height=height)
   }
 }
 
