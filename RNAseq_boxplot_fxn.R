@@ -35,8 +35,8 @@ REQUIRED
   outdir = Filepath to directory to save results
 
 OPTIONAL
-   interaction = Logical if should plot interaction of 2 vars. Default
-                 is FALSE
+   interaction = Logical if should plot interaction of FIRST 2 vars.
+                 Vars must be factor or character. Default is FALSE
    colors = If do not want to use default ggplot colors, list of colors
             to use. Must be same length as levels of color.var
    name = Character string to prepend to output names. Default is NULL
@@ -60,6 +60,7 @@ Example
 "
 
 #################
+
 plot.all <- function(voom.dat, pval.dat, meta.dat, 
                      genes.toPlot, vars,
                           interaction=FALSE,
@@ -112,6 +113,7 @@ if(class(voom.dat) == "EList"){
   stop("Metadata must be CSV on disk or part of EList voom object in environment.")
 }
 
+########## Format data ########## 
 #Rename 1st column to match
 colnames(pval.dat.loaded)[1] <- "gene"
 colnames(voom.dat.loaded)[1] <- "gene"
@@ -122,9 +124,9 @@ plot.dat <- voom.dat.loaded %>%
                values_to = "voom.count") %>% 
   left_join(meta.dat.loaded, by="libID") %>% 
   left_join(pval.dat.loaded, by="gene") %>% 
-  mutate(color.var = factor(get(color.var))) %>% 
-  mutate_at(vars(vars), ~fct_relevel(., "none", after = 0))
+  mutate(color.var = factor(get(color.var)))
 
+########## Plots ########## 
 #List all genes/modules
 to_plot <- sort(unique(plot.dat$gene))
 
@@ -133,7 +135,7 @@ library(doParallel)
 library(foreach)
 registerDoParallel(cores=cores)
 
-# Loop through genes to create plots
+##########  Loop through genes ########## 
 foreach(i = 1:length(to_plot)) %dopar% {
   print(i)
   
@@ -141,39 +143,81 @@ foreach(i = 1:length(to_plot)) %dopar% {
   plot.dat.sub <- plot.dat %>% 
     filter(gene == to_plot[i])
   
-  #### PLOTS ####
+########## Loop through variables ########## 
   plot_list = list()
-  #Regular variables
+  
   for(j in 1:length(vars)){
-    #List levels of variable of interest
-    var.levels <- plot.dat.sub %>% 
-      select(vars[j]) %>% 
-      distinct() %>% 
-      unlist(use.names = FALSE)
-    
-    #Filter data to fdr values for levels assoc with variable of interest
-    plot.dat.sub2 <- plot.dat.sub %>% 
-      filter(group %in% var.levels |
-             group == vars[j])
-    
-    plot.title <- paste("FDR=", formatC(unique(plot.dat.sub2$adj.P.Val), 
-                  format = "e", digits = 4), sep="")
-    
-    plot1 <- plot.dat.sub2 %>% 
-      ggplot(aes_string(x=vars[j], y="voom.count")) +
-      geom_boxplot(outlier.shape = NA) +
-      geom_jitter(aes(color=color.var), height=0, width=0.2) +
-      theme_classic() +
-      labs(title=plot.title, y="Normalized log2 expression",
-           x="") +
-      theme(legend.position = "none", plot.title = element_text(size=9))
-    
-    if(is.null(colors)){
-      plot_list[[j]] <- plot1
+
+    #Type = factor or character variables
+    if(is.factor(plot.dat.sub[[vars[j]]]) |
+       is.character(plot.dat.sub[[vars[j]]])) {
+      
+      plot.dat.sub.fct <- plot.dat.sub %>% 
+        mutate_at(vars(vars), ~fct_relevel(as.factor(.), 
+                                           "none", after = 0))
+      
+      #List levels of variable of interest
+      var.levels <- plot.dat.sub.fct %>% 
+        select(vars[j]) %>% 
+        distinct() %>% 
+        unlist(use.names = FALSE)
+      
+      #Filter data to fdr values for levels assoc with variable of interest
+      plot.dat.sub2 <- plot.dat.sub.fct %>% 
+        filter(group %in% var.levels |
+                 group == vars[j])
+      
+      #Extract plot title with FDR
+      plot.title <- paste("FDR=", 
+                          formatC(unique(plot.dat.sub2$adj.P.Val), 
+                                  format = "e", digits = 4), sep="")
+      
+      plot1 <- plot.dat.sub2 %>% 
+        ggplot(aes_string(x=vars[j], y="voom.count")) +
+        geom_boxplot(outlier.shape = NA) +
+        geom_jitter(aes(color=color.var), height=0, width=0.2) +
+        theme_classic() +
+        labs(title=plot.title, y="Normalized log2 expression",
+             x="") +
+        theme(legend.position = "none", 
+              plot.title = element_text(size=9))
+      
+      if(is.null(colors)){
+        plot_list[[j]] <- plot1
+      } else{
+        plot1 <- plot1 + scale_color_manual(values=colors)
+        plot_list[[j]] <- plot1
+      }
+      
+    } else if(is.numeric(plot.dat.sub[[vars[j]]])){
+      #Filter data to fdr values for variable of interest
+      plot.dat.sub2 <- plot.dat.sub %>% 
+        filter(group == vars[j])
+      
+      #Extract plot title with FDR
+      plot.title <- paste("FDR=", 
+                          formatC(unique(plot.dat.sub2$adj.P.Val), 
+                          format = "e", digits = 4), sep="")
+      plot1 <- plot.dat.sub2 %>% 
+        ggplot(aes_string(x=vars[j], y="voom.count")) +
+        geom_point(aes(color=color.var)) +
+        theme_classic() +
+        labs(title=plot.title, y="Normalized log2 expression") +
+        theme(legend.position = "none", 
+              plot.title = element_text(size=9)) +
+        geom_smooth(method='lm', formula= y~x, color="black",
+                    se=FALSE)
+      
+      if(is.null(colors)){
+        plot_list[[j]] <- plot1
+      } else{
+        plot1 <- plot1 + scale_color_manual(values=colors)
+        plot_list[[j]] <- plot1
+      }
     } else{
-      plot1 <- plot1 + scale_color_manual(values=colors)
-      plot_list[[j]] <- plot1
+    stop("Variables of interest must be numeric, character, or factor.")
     }
+
   }
   
   #Interaction variable
