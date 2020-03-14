@@ -152,7 +152,7 @@ make.modules <- function(voom.dat,
   
   #Voom counts
   write_csv(rownames_to_column(voom.mods, "module"), col_names = TRUE,
-            paste(dir.results, "/", basename, 
+            paste(dir.results, "/", basename, "_mod",
                   "_voom_counts.csv", sep=""))
 
   #Genes in module
