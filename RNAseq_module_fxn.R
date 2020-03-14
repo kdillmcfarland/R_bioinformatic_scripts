@@ -127,8 +127,8 @@ make.modules <- function(voom.dat,
     group_by(module.char) %>% 
     summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
     
-    #Add basename prefix to module name
-    mutate(module.char=paste(basename, module.char, sep="_")) %>% 
+    #Add "mod" to module names
+    mutate(module.char=paste("module", module.char, sep="_")) %>% 
     column_to_rownames("module.char")
   
   ##### Save results to environ #####
@@ -151,9 +151,9 @@ make.modules <- function(voom.dat,
                           ".png", sep=""))
   
   #Voom counts
-  experi <-  strsplit(basename, "_")[[1]][1]
   write_csv(rownames_to_column(voom.mods, "module"), col_names = TRUE,
-            paste(dir.results, "/", experi, "_voom_counts.csv", sep=""))
+            paste(dir.results, "/", basename, 
+                  "_voom_counts.csv", sep=""))
 
   #Genes in module
   write_csv(mods, col_names = TRUE,
