@@ -132,9 +132,9 @@ SNP.model.fxn <- function(voom.counts, snp.data, match.by="libID",
     #Don't run model if SNP diversity across levels is too low. 
     #Based on snp.min samples per snp level. Exclude = 0 since the previous
       #exclusion takes care of those
-    if(any(length(snp.values[snp.values==0]) == c(1,snp.min-1) |
-           length(snp.values[snp.values==1]) == c(1,snp.min-1) |
-           length(snp.values[snp.values==2]) == c(1,snp.min-1))){
+    if(any(length(snp.values[snp.values==0]) == c(0:snp.min-1) |
+           length(snp.values[snp.values==1]) == c(0:snp.min-1) |
+           length(snp.values[snp.values==2]) == c(0:snp.min-1))){
       results.temp <- data.frame(snp=snp.id, 
                                  exclude="low snp diversity")
       results <- bind_rows(results,results.temp)} else
