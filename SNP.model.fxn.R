@@ -130,14 +130,23 @@ SNP.model.fxn <- function(voom.counts, snp.data, match.by="libID",
     } else
       
     #Don't run model if SNP diversity across levels is too low. 
-    #Based on snp.min samples per snp level. Exclude = 0 since the previous
-      #exclusion takes care of those
-    if(any(length(snp.values[snp.values==0]) == c(0:snp.min-1) |
-           length(snp.values[snp.values==1]) == c(0:snp.min-1) |
-           length(snp.values[snp.values==2]) == c(0:snp.min-1))){
+    #Based on snp.min samples per snp level.
+    #At least 2 levels must meet the snp.min
+    if((
+      #If too few 0 and 1
+      (length(snp.values[snp.values==0]) < snp.min &
+         length(snp.values[snp.values==1]) < snp.min) + 
+      #If too few 0 and 2
+      (length(snp.values[snp.values==0]) < snp.min &
+         length(snp.values[snp.values==2]) < snp.min) + 
+      #If too few 1 and 2
+      (length(snp.values[snp.values==1]) < snp.min &
+         length(snp.values[snp.values==2]) < snp.min)
+      ) >= 2 ){
       results.temp <- data.frame(snp=snp.id, 
                                  exclude="low snp diversity")
-      results <- bind_rows(results,results.temp)} else
+      results <- bind_rows(results,results.temp)
+    }  else
         
     #Don't run model if too few samples with relevant SNP data
     if(length(snp.sub.GOI[!is.na(snp.sub.GOI[,snp.id]),snp.id]) < sample.min){
