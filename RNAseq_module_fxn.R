@@ -127,8 +127,8 @@ make.modules <- function(voom.dat,
     group_by(module.char) %>% 
     summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
     
-    #Add "mod" to module names
-    mutate(module.char=paste("module", module.char, sep="_")) %>% 
+    #Add basename to module names
+    mutate(module.char=paste("module", basename, module.char, sep="_")) %>% 
     column_to_rownames("module.char")
   
   ##### Save results to environ #####
