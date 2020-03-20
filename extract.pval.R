@@ -45,6 +45,8 @@ OPTIONAL
               'contrast.mat'. Default is FALSE.
   contrast.mat = Contrast matrix from makeContrasts( ) corresponding to
                  contrasts of variables in the 'model'
+  FC.group = Logical if should parse summary for fold change up and down.
+            Default is FALSE
                
 Example
   extract.pval(model = model.interact,
@@ -52,7 +54,8 @@ Example
                eFit = efit.data, 
                name = 'pval_mods_2B.interact',
                summary = TRUE,
-               contrasts = FALSE)
+               contrasts = FALSE,
+               FC.group = FALSE)
 "
 
 #################
@@ -60,7 +63,8 @@ extract.pval <- function(model, voom.dat, eFit,
                          name="pval",
                          summary=FALSE, 
                          contrast.mat=NULL,
-                         contrasts=FALSE){
+                         contrasts=FALSE,
+                         FC.group = FALSE){
   require(tidyverse)
   require(limma)
 
@@ -141,6 +145,61 @@ extract.pval <- function(model, voom.dat, eFit,
                             n.4=total.4,
                             n.5=total.5) 
     
+    #Add FC group if selected
+    if(FC.group == TRUE){
+      #Summarize signif genes per variable at various levels
+      gene.05 <- pval.result %>% 
+        filter(adj.P.Val <= 0.05) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally() %>% 
+        rename(n.05=n)
+      
+      gene.1 <- pval.result %>% 
+        filter(adj.P.Val <= 0.1) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally() %>% 
+        rename(n.1=n)
+      
+      gene.2 <- pval.result %>% 
+        filter(adj.P.Val <= 0.2) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally()  %>% 
+        rename(n.2=n)
+      
+      gene.3 <- pval.result %>% 
+        filter(adj.P.Val <= 0.3) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally() %>% 
+        rename(n.3=n)
+      
+      gene.4 <- pval.result %>% 
+        filter(adj.P.Val <= 0.4) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally() %>% 
+        rename(n.4=n)
+      
+      gene.5 <- pval.result %>% 
+        filter(adj.P.Val <= 0.5) %>% 
+        group_by(group, FC.group, .drop = FALSE) %>% 
+        tally()  %>% 
+        rename(n.5=n)
+      
+      #Combine all
+      pval.summ <- full_join(gene.05, gene.1) %>% 
+        full_join(gene.2) %>% 
+        full_join(gene.3) %>% 
+        full_join(gene.4) %>% 
+        full_join(gene.5) %>% 
+        ungroup() %>% 
+        filter(group != "(Intercept)") %>% 
+        bind_rows(gene.tots) %>% 
+        mutate(group = fct_relevel(group, "total (nonredundant)", 
+                                   after = Inf)) %>% 
+        arrange(group)
+      
+      name2 <- paste(name, "summ", sep=".")
+      assign(name2, pval.summ, envir = .GlobalEnv)
+    } else{
     #Summarize signif genes per variable at various levels
     gene.05 <- pval.result %>% 
       filter(adj.P.Val <= 0.05) %>% 
@@ -193,5 +252,6 @@ extract.pval <- function(model, voom.dat, eFit,
     
     name2 <- paste(name, "summ", sep=".")
     assign(name2, pval.summ, envir = .GlobalEnv)
+  }
   }
 }
