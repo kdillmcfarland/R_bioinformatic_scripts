@@ -8,7 +8,7 @@ Creates 2 objects in .GlobalEnv. First is a data frame containing
   logFC 'up' or 'down' (FC.group)
   
 Optional second object is a summary data frame of total genes/modules 
-significant at FDR <= 0.05, 0.1, 0.2, 0.3, 0.4, and 0.5
+significant at FDR <= list provided
 
 #################
 
@@ -47,6 +47,8 @@ OPTIONAL
                  contrasts of variables in the 'model'
   FC.group = Logical if should parse summary for fold change up and down.
             Default is FALSE
+  fdr.cutoff = Vector of fdr values to include in summary. Default is
+               c(0.05,0.1,0.2,0.3,0.4,0.5)
                
 Example
   extract.pval(model = model.interact,
@@ -64,7 +66,8 @@ extract.pval <- function(model, voom.dat, eFit,
                          summary=FALSE, 
                          contrast.mat=NULL,
                          contrasts=FALSE,
-                         FC.group = FALSE){
+                         FC.group = FALSE,
+                         fdr.cutoff = c(0.05,0.1,0.2,0.3,0.4,0.5)){
   require(tidyverse)
   require(limma)
 
@@ -112,182 +115,80 @@ extract.pval <- function(model, voom.dat, eFit,
   
 #Add FC group if selected
     if(summary == TRUE & FC.group == TRUE){
-      #Calculate total, nonredundant signif genes at different levels
-      total.05 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.05) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.05`=n)
-      total.1 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.1) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.1`=n)
-      total.2 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.2) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.2`=n)
-      total.3 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.3) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.3`=n)
-      total.4 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.4) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.4`=n)
-      total.5 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.5) %>% 
-        distinct(geneName, FC.group) %>% 
-        count(FC.group) %>% 
-        rename(`n.5`=n)
-      #Combine results
-      gene.tots <- full_join(total.05, total.1, by = "FC.group") %>% 
-                   full_join(total.2, by = "FC.group") %>% 
-                   full_join(total.3, by = "FC.group") %>% 
-                   full_join(total.4, by = "FC.group") %>% 
-                   full_join(total.5, by = "FC.group") %>% 
-        mutate(group = "total (nonredundant)")
       
-      #Summarize signif genes per variable at various levels
-      gene.05 <- pval.result %>% 
-        filter(adj.P.Val <= 0.05) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally() %>% 
-        rename(n.05=n)
+      total.results <- data.frame()
+      group.results <- pval.result %>% 
+        count(group, FC.group, .drop = FALSE) %>% 
+        select(-n) %>% 
+        mutate_if(is.factor, as.character)
       
-      gene.1 <- pval.result %>% 
-        filter(adj.P.Val <= 0.1) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally() %>% 
-        rename(n.1=n)
+      for(fdr in fdr.cutoff){
+        #Calculate total, nonredundant signif genes at different levels
+        total.temp <- pval.result %>% 
+          filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
+          distinct(geneName, FC.group) %>% 
+          count(FC.group, .drop = FALSE) %>% 
+          rename(fdr=n) %>% 
+          mutate_if(is.factor, as.character)
+        
+        total.results <- bind_rows(total.results, total.temp) %>% 
+          mutate(group = "total (nonredundant)")
+        
+        #Summarize signif genes per variable at various levels
+        group.temp <- pval.result %>% 
+          filter(adj.P.Val <= fdr) %>% 
+          count(group, FC.group, .drop = FALSE) %>% 
+          select(n) %>% 
+          rename(fdr=n)
+        
+        group.results <- bind_cols(group.results, group.temp)
+      }
       
-      gene.2 <- pval.result %>% 
-        filter(adj.P.Val <= 0.2) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally()  %>% 
-        rename(n.2=n)
-      
-      gene.3 <- pval.result %>% 
-        filter(adj.P.Val <= 0.3) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally() %>% 
-        rename(n.3=n)
-      
-      gene.4 <- pval.result %>% 
-        filter(adj.P.Val <= 0.4) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally() %>% 
-        rename(n.4=n)
-      
-      gene.5 <- pval.result %>% 
-        filter(adj.P.Val <= 0.5) %>% 
-        group_by(group, FC.group, .drop = FALSE) %>% 
-        tally()  %>% 
-        rename(n.5=n)
-      
-      #Combine all
-      pval.summ <- full_join(gene.05, gene.1, by = c("group", "FC.group")) %>% 
-        full_join(gene.2, by = c("group", "FC.group")) %>% 
-        full_join(gene.3, by = c("group", "FC.group")) %>% 
-        full_join(gene.4, by = c("group", "FC.group")) %>% 
-        full_join(gene.5, by = c("group", "FC.group")) %>% 
-        ungroup() %>% 
+      #Combine group and total results
+      result <- group.results %>% 
         filter(group != "(Intercept)") %>% 
-        bind_rows(gene.tots) %>% 
-        mutate(group = fct_relevel(group, "total (nonredundant)", 
-                                   after = Inf)) %>% 
-        arrange(group)
+        mutate_if(is.factor, as.character) %>% 
+        bind_rows(total.results) 
       
       name2 <- paste(name, "summ", sep=".")
       assign(name2, pval.summ, envir = .GlobalEnv)
+      
     } else if(summary == TRUE){
-      #Calculate total, nonredundant signif genes at different levels
-      total.05 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.05) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      total.1 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.1) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      total.2 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.2) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      total.3 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.3) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      total.4 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.4) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      total.5 <- pval.result %>% 
-        filter(group != '(Intercept)' & adj.P.Val<=0.5) %>% 
-        distinct(geneName) %>% 
-        nrow()
-      #Combine results
-      gene.tots <- data.frame(group="total (nonredundant)",
-                              n.05=total.05,
-                              n.1=total.1,
-                              n.2=total.2,
-                              n.3=total.3,
-                              n.4=total.4,
-                              n.5=total.5)
-    #Summarize signif genes per variable at various levels
-    gene.05 <- pval.result %>% 
-      filter(adj.P.Val <= 0.05) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally() %>% 
-      rename(n.05=n)
-    
-    gene.1 <- pval.result %>% 
-      filter(adj.P.Val <= 0.1) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally() %>% 
-      rename(n.1=n)
-    
-    gene.2 <- pval.result %>% 
-      filter(adj.P.Val <= 0.2) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally()  %>% 
-      rename(n.2=n)
-    
-    gene.3 <- pval.result %>% 
-      filter(adj.P.Val <= 0.3) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally() %>% 
-      rename(n.3=n)
-    
-    gene.4 <- pval.result %>% 
-      filter(adj.P.Val <= 0.4) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally() %>% 
-      rename(n.4=n)
-    
-    gene.5 <- pval.result %>% 
-      filter(adj.P.Val <= 0.5) %>% 
-      group_by(group, .drop = FALSE) %>% 
-      tally()  %>% 
-      rename(n.5=n)
-    
-    #Combine all
-    pval.summ <- full_join(gene.05, gene.1, by = c("group", "FC.group")) %>% 
-      full_join(gene.2, by = c("group", "FC.group")) %>% 
-      full_join(gene.3, by = c("group", "FC.group")) %>% 
-      full_join(gene.4, by = c("group", "FC.group")) %>% 
-      full_join(gene.5, by = c("group", "FC.group")) %>% 
-      ungroup() %>% 
-      filter(group != "(Intercept)") %>% 
-      bind_rows(gene.tots) %>% 
-      mutate(group = fct_relevel(group, "total (nonredundant)", 
-                                 after = Inf)) %>% 
-      arrange(group)
-    
-    name2 <- paste(name, "summ", sep=".")
-    assign(name2, pval.summ, envir = .GlobalEnv)
+          
+        total.results <- c()
+        group.results <- pval.result %>% 
+          count(group, .drop = FALSE) %>% 
+          select(-n) %>% 
+          mutate_if(is.factor, as.character)
+        
+        for(fdr in fdr.cutoff){
+          #Calculate total, nonredundant signif genes at different levels
+          total.temp <- pval.result %>% 
+            filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
+            distinct(geneName) %>% 
+            nrow()
+          
+          total.results <- c(total.results, total.temp)
+          total.results <- bind_rows(total.results, total.temp) %>% 
+            mutate(group = "total (nonredundant)")
+          
+          #Summarize signif genes per variable at various levels
+          group.temp <- pval.result %>% 
+            filter(adj.P.Val <= fdr) %>% 
+            count(group, .drop = FALSE) %>% 
+            select(n) %>% 
+            rename(fdr=n)
+          
+          group.results <- bind_cols(group.results, group.temp)
+        }
+        
+        #Combine group and total results
+        result <- group.results %>% 
+          filter(group != "(Intercept)") %>% 
+          mutate_if(is.factor, as.character) %>% 
+          rbind(c("total (nonredundant)",total.results))
+        
+        name2 <- paste(name, "summ", sep=".")
+        assign(name2, pval.summ, envir = .GlobalEnv)
   }
   }
