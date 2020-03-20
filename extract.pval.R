@@ -110,43 +110,47 @@ extract.pval <- function(model, voom.dat, eFit,
   }
   assign(name, pval.result, envir = .GlobalEnv)
   
-  if(summary == TRUE){
-    #Calculate total, nonredundant signif genes at different levels
-    total.05 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.05) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    total.1 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.1) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    total.2 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.2) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    total.3 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.3) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    total.4 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.4) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    total.5 <- pval.result %>% 
-      filter(group != '(Intercept)' & adj.P.Val<=0.5) %>% 
-      distinct(geneName) %>% 
-      nrow()
-    #Combine results
-    gene.tots <- data.frame(group="total (nonredundant)",
-                            n.05=total.05,
-                            n.1=total.1,
-                            n.2=total.2,
-                            n.3=total.3,
-                            n.4=total.4,
-                            n.5=total.5) 
-    
-    #Add FC group if selected
-    if(FC.group == TRUE){
+#Add FC group if selected
+    if(summary == TRUE & FC.group == TRUE){
+      #Calculate total, nonredundant signif genes at different levels
+      total.05 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.05) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.05`=n)
+      total.1 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.1) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.1`=n)
+      total.2 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.2) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.2`=n)
+      total.3 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.3) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.3`=n)
+      total.4 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.4) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.4`=n)
+      total.5 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.5) %>% 
+        distinct(geneName, FC.group) %>% 
+        count(FC.group) %>% 
+        rename(`n.5`=n)
+      #Combine results
+      gene.tots <- full_join(total.05, total.1, by = "FC.group") %>% 
+                   full_join(total.2, by = "FC.group") %>% 
+                   full_join(total.3, by = "FC.group") %>% 
+                   full_join(total.4, by = "FC.group") %>% 
+                   full_join(total.5, by = "FC.group") %>% 
+        mutate(group = "total (nonredundant)")
+      
       #Summarize signif genes per variable at various levels
       gene.05 <- pval.result %>% 
         filter(adj.P.Val <= 0.05) %>% 
@@ -185,11 +189,11 @@ extract.pval <- function(model, voom.dat, eFit,
         rename(n.5=n)
       
       #Combine all
-      pval.summ <- full_join(gene.05, gene.1) %>% 
-        full_join(gene.2) %>% 
-        full_join(gene.3) %>% 
-        full_join(gene.4) %>% 
-        full_join(gene.5) %>% 
+      pval.summ <- full_join(gene.05, gene.1, by = c("group", "FC.group")) %>% 
+        full_join(gene.2, by = c("group", "FC.group")) %>% 
+        full_join(gene.3, by = c("group", "FC.group")) %>% 
+        full_join(gene.4, by = c("group", "FC.group")) %>% 
+        full_join(gene.5, by = c("group", "FC.group")) %>% 
         ungroup() %>% 
         filter(group != "(Intercept)") %>% 
         bind_rows(gene.tots) %>% 
@@ -199,7 +203,40 @@ extract.pval <- function(model, voom.dat, eFit,
       
       name2 <- paste(name, "summ", sep=".")
       assign(name2, pval.summ, envir = .GlobalEnv)
-    } else{
+    } else if(summary == TRUE){
+      #Calculate total, nonredundant signif genes at different levels
+      total.05 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.05) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      total.1 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.1) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      total.2 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.2) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      total.3 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.3) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      total.4 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.4) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      total.5 <- pval.result %>% 
+        filter(group != '(Intercept)' & adj.P.Val<=0.5) %>% 
+        distinct(geneName) %>% 
+        nrow()
+      #Combine results
+      gene.tots <- data.frame(group="total (nonredundant)",
+                              n.05=total.05,
+                              n.1=total.1,
+                              n.2=total.2,
+                              n.3=total.3,
+                              n.4=total.4,
+                              n.5=total.5)
     #Summarize signif genes per variable at various levels
     gene.05 <- pval.result %>% 
       filter(adj.P.Val <= 0.05) %>% 
@@ -254,4 +291,3 @@ extract.pval <- function(model, voom.dat, eFit,
     assign(name2, pval.summ, envir = .GlobalEnv)
   }
   }
-}
