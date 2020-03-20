@@ -151,7 +151,7 @@ extract.pval <- function(model, voom.dat, eFit,
         bind_rows(total.results) 
       
       name2 <- paste(name, "summ", sep=".")
-      assign(name2, pval.summ, envir = .GlobalEnv)
+      assign(name2, result, envir = .GlobalEnv)
       
     } else if(summary == TRUE){
           
@@ -189,6 +189,6 @@ extract.pval <- function(model, voom.dat, eFit,
           rbind(c("total (nonredundant)",total.results))
         
         name2 <- paste(name, "summ", sep=".")
-        assign(name2, pval.summ, envir = .GlobalEnv)
+        assign(name2, result, envir = .GlobalEnv)
   }
   }
