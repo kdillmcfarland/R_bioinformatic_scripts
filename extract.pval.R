@@ -275,11 +275,11 @@ extract.pval <- function(model, voom.dat, eFit,
       rename(n.5=n)
     
     #Combine all
-    pval.summ <- full_join(gene.05, gene.1) %>% 
-      full_join(gene.2) %>% 
-      full_join(gene.3) %>% 
-      full_join(gene.4) %>% 
-      full_join(gene.5) %>% 
+    pval.summ <- full_join(gene.05, gene.1, by = c("group", "FC.group")) %>% 
+      full_join(gene.2, by = c("group", "FC.group")) %>% 
+      full_join(gene.3, by = c("group", "FC.group")) %>% 
+      full_join(gene.4, by = c("group", "FC.group")) %>% 
+      full_join(gene.5, by = c("group", "FC.group")) %>% 
       ungroup() %>% 
       filter(group != "(Intercept)") %>% 
       bind_rows(gene.tots) %>% 
