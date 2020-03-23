@@ -123,23 +123,23 @@ extract.pval <- function(model, voom.dat, eFit,
         mutate_if(is.factor, as.character)
       
       for(fdr in fdr.cutoff){
+        name <- paste("fdr",fdr, sep="_")
         #Calculate total, nonredundant signif genes at different levels
         total.temp <- pval.result %>% 
           filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
           distinct(geneName, FC.group) %>% 
           count(FC.group, .drop = FALSE) %>% 
-          rename(fdr=n) %>% 
+          rename(!!name:="n") %>% 
           mutate_if(is.factor, as.character)
         
-        total.results <- bind_rows(total.results, total.temp) %>% 
-          mutate(group = "total (nonredundant)")
+        total.results <- bind_rows(total.results, total.temp) 
         
         #Summarize signif genes per variable at various levels
         group.temp <- pval.result %>% 
           filter(adj.P.Val <= fdr) %>% 
           count(group, FC.group, .drop = FALSE) %>% 
           select(n) %>% 
-          rename(fdr=n)
+          rename(!!name:="n")
         
         group.results <- bind_cols(group.results, group.temp)
       }
@@ -162,6 +162,7 @@ extract.pval <- function(model, voom.dat, eFit,
           mutate_if(is.factor, as.character)
         
         for(fdr in fdr.cutoff){
+          name <- paste("fdr",fdr, sep="_")
           #Calculate total, nonredundant signif genes at different levels
           total.temp <- pval.result %>% 
             filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
@@ -169,15 +170,13 @@ extract.pval <- function(model, voom.dat, eFit,
             nrow()
           
           total.results <- c(total.results, total.temp)
-          total.results <- bind_rows(total.results, total.temp) %>% 
-            mutate(group = "total (nonredundant)")
           
           #Summarize signif genes per variable at various levels
           group.temp <- pval.result %>% 
             filter(adj.P.Val <= fdr) %>% 
             count(group, .drop = FALSE) %>% 
             select(n) %>% 
-            rename(fdr=n)
+            rename(!!name:="n")
           
           group.results <- bind_cols(group.results, group.temp)
         }
