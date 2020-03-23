@@ -123,13 +123,13 @@ extract.pval <- function(model, voom.dat, eFit,
         mutate_if(is.factor, as.character)
       
       for(fdr in fdr.cutoff){
-        name <- paste("fdr",fdr, sep="_")
+        name.fdr <- paste("fdr",fdr, sep="_")
         #Calculate total, nonredundant signif genes at different levels
         total.temp <- pval.result %>% 
           filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
           distinct(geneName, FC.group) %>% 
           count(FC.group, .drop = FALSE) %>% 
-          mutate(fdr_group = name) %>% 
+          mutate(fdr_group = name.fdr) %>% 
           mutate_if(is.factor, as.character)
         
         total.results <- bind_rows(total.results, total.temp) 
@@ -139,7 +139,7 @@ extract.pval <- function(model, voom.dat, eFit,
           filter(adj.P.Val <= fdr) %>% 
           count(group, FC.group, .drop = FALSE) %>% 
           select(n) %>% 
-          rename(!!name:="n")
+          rename(!!name.fdr:="n")
         
         group.results <- bind_cols(group.results, group.temp)
       }
