@@ -129,7 +129,7 @@ extract.pval <- function(model, voom.dat, eFit,
           filter(group != '(Intercept)' & adj.P.Val<=fdr) %>% 
           distinct(geneName, FC.group) %>% 
           count(FC.group, .drop = FALSE) %>% 
-          rename(!!name:="n") %>% 
+          mutate(fdr_group = name) %>% 
           mutate_if(is.factor, as.character)
         
         total.results <- bind_rows(total.results, total.temp) 
@@ -145,10 +145,13 @@ extract.pval <- function(model, voom.dat, eFit,
       }
       
       #Combine group and total results
+      total.results.pivot <- total.results %>% 
+        pivot_wider(names_from = fdr_group, values_from = n)
+      
       result <- group.results %>% 
         filter(group != "(Intercept)") %>% 
         mutate_if(is.factor, as.character) %>% 
-        bind_rows(total.results) 
+        bind_rows(total.results.pivot) 
       
       name2 <- paste(name, "summ", sep=".")
       assign(name2, result, envir = .GlobalEnv)
@@ -180,6 +183,7 @@ extract.pval <- function(model, voom.dat, eFit,
           
           group.results <- bind_cols(group.results, group.temp)
         }
+        
         
         #Combine group and total results
         result <- group.results %>% 
