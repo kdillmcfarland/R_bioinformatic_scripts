@@ -147,7 +147,8 @@ extract.pval <- function(model, voom.dat, eFit,
       #Combine group and total results
       total.results.pivot <- total.results %>% 
         pivot_wider(names_from = fdr_group, values_from = n) %>% 
-        mutate(group = "total (nonredundant)")
+        mutate(group = "total (nonredundant)") %>% 
+        select(group, everything())
       
       result <- group.results %>% 
         filter(group != "(Intercept)") %>% 
