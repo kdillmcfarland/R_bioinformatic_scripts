@@ -44,6 +44,9 @@ OPTIONAL
    gene.key = Filepath to Ensembl gene key to name genes in plots.
               Generally 'EnsemblToHGNC_GRCh38.txt'. Default is NULL
    cores = Number of parallel cores to use. Default is 1
+   vars_transform = Character vector of transformations to apply to x
+                    variables. Can ONLY be applied to numeric variables
+                    and NOT to interaction terms. Default is NULL
    
 Example
   plot.all(voom.dat='P259.2_voom.counts.csv', 
@@ -68,7 +71,8 @@ plot.all <- function(voom.dat, pval.dat, meta.dat,
                           color.var=NULL, colors=NULL,
                           outdir=NULL, name=NULL, 
                           gene.key=NULL,
-                          cores=1, width, height){
+                          cores=1, width, height,
+                          vars_transform=NULL){
 ########## SETUP ########## 
 # Data manipulation and figures
 library(tidyverse)
@@ -198,15 +202,27 @@ foreach(i = 1:length(to_plot)) %dopar% {
       
     } else if(is.numeric(plot.dat.sub[[vars[j]]])){
       #Filter data to fdr values for variable of interest
-      plot.dat.sub2 <- plot.dat.sub %>% 
-        filter(group == vars[j])
-      
+      ##### Transform if provided
+      if(!is.null(vars_transform)){
+        transformation <- gsub("x", vars[j], vars_transform[j])
+        
+        plot.dat.sub2 <- plot.dat.sub %>% 
+          filter(group == vars[j]) %>% 
+          mutate_(transformation = transformation)
+        
+        x.var <- transformation
+      } else{
+        plot.dat.sub2 <- plot.dat.sub %>% 
+          filter(group == vars[j])
+                 
+        x.var <- vars[j]
+      }
       #Extract plot title with FDR
       plot.title <- paste("FDR=", 
                           formatC(unique(plot.dat.sub2$adj.P.Val), 
                           format = "e", digits = 4), sep="")
       plot1 <- plot.dat.sub2 %>% 
-        ggplot(aes_string(x=vars[j], y="voom.count")) +
+        ggplot(aes_string(x=x.var, y="voom.count")) +
         geom_point(aes(color=color.var)) +
         theme_classic() +
         labs(title=plot.title, y="Normalized log2 expression") +
