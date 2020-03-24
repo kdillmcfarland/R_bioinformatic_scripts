@@ -165,7 +165,7 @@ foreach(i = 1:length(to_plot)) %dopar% {
        is.character(plot.dat.sub[[vars[j]]])) {
       
       plot.dat.sub.fct <- plot.dat.sub %>% 
-        mutate_at(vars(vars), ~fct_relevel(as.factor(.), 
+        mutate_at(vars(vars[j]), ~fct_relevel(as.factor(.), 
                                            "none", after = 0))
       
       #List levels of variable of interest
@@ -174,15 +174,23 @@ foreach(i = 1:length(to_plot)) %dopar% {
         distinct() %>% 
         unlist(use.names = FALSE)
       
+      #IF variable was in model
+      if(vars[j] %in% plot.dat.sub.fct$group){
       #Filter data to fdr values for levels assoc with variable of interest
       plot.dat.sub2 <- plot.dat.sub.fct %>% 
         filter(group %in% var.levels |
                  group == vars[j])
-      
       #Extract plot title with FDR
       plot.title <- paste("FDR=", 
                           formatC(unique(plot.dat.sub2$adj.P.Val), 
                                   format = "e", digits = 4), sep="")
+      } else{
+        plot.dat.sub2 <- plot.dat.sub.fct %>% 
+          select(-group, -adj.P.Val) %>% 
+          distinct()
+        #Make plot title w/o FDR
+        plot.title <- "Not in gene model"
+      }
       
       plot1 <- plot.dat.sub2 %>% 
         ggplot(aes_string(x=vars[j], y="voom.count")) +
