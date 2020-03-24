@@ -1,4 +1,4 @@
-"Convert WCGNA gene lists to DAVID format
+"Convert WGCNA gene lists to DAVID format
 
 Used in 'RNAseq_module_fxn.R'
 
