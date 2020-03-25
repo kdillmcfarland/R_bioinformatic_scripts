@@ -1,4 +1,4 @@
-"Create WCGNA modules and format outputs
+"Create WGCNA modules and format outputs
 
 #################
 
@@ -20,12 +20,15 @@ Input parameters:
 REQUIRED
   voom.dat = EList object output by voom( ) or voomWithQualityWeights( )
   genes.signif = Character vector of genes in include in modules
-  Rsq.min = Minimum R-squared allowed to select soft thresholding in
-            pickSoftThreshold( ). Default is 0.8
   minModuleSize = Minimum module size. Default is 20
   deepSplit = Level of deep split in module building tree. Default is 3.
               0-4 allowed
-                         
+              
+REQUIRED (one of)
+  Rsq.min = Minimum R-squared allowed to select soft thresholding in
+            pickSoftThreshold( ).
+  sft = Override min R-squared and set soft thresholding to a value
+  
 OPTIONAL
   nThread = Number of parallel processors to use. Default is 1
   basename = Character to prepend to output names. Default is 'basename'
@@ -43,7 +46,8 @@ Example
 #################
 make.modules <- function(voom.dat,
                          genes.signif,
-                         Rsq.min = 0.8,
+                         Rsq.min = NULL,
+                         sft = NULL,
                          minModuleSize = 20,
                          deepSplit = 3,
                          nThread=1, basename="basename"){
@@ -70,10 +74,19 @@ make.modules <- function(voom.dat,
   sft <- pickSoftThreshold(t(voom.signif$E), 
                            powerVector=c(1:30), verbose=5,
                            networkType = "signed")
-  #Select threshold where R-squared if near 0.9
-  sft.select <- as.data.frame(sft$fitIndices) %>% 
-    filter(SFT.R.sq  >= Rsq.min)
-  power.t <- min(sft.select$Power)
+  #Select threshold 
+  if(!is.null(Rsq.min)){
+    sft.select <- as.data.frame(sft$fitIndices) %>% 
+      filter(SFT.R.sq  >= Rsq.min)
+    power.t <- min(sft.select$Power)
+  } else(!is.null(sft)){
+    sft.select <- as.data.frame(sft$fitIndices) %>% 
+      filter(Power == sft)
+    power.t <- unique(sft.select$Power)
+  } else{
+    stop("Please select min R-squared or soft threshold.")
+  }
+  
   #Plot
   sft.plot <- as.data.frame(sft$fitIndices) %>% 
     mutate(fit = -sign(slope)*SFT.R.sq) %>% 
