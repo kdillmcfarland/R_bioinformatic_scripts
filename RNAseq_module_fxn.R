@@ -79,7 +79,7 @@ make.modules <- function(voom.dat,
     sft.select <- as.data.frame(sft$fitIndices) %>% 
       filter(SFT.R.sq  >= Rsq.min)
     power.t <- min(sft.select$Power)
-  } else(!is.null(sft.value)){
+  } else if(!is.null(sft.value)){
     sft.select <- as.data.frame(sft$fitIndices) %>% 
       filter(Power == sft.value)
     power.t <- unique(sft.select$Power)
