@@ -27,7 +27,7 @@ REQUIRED
 REQUIRED (one of)
   Rsq.min = Minimum R-squared allowed to select soft thresholding in
             pickSoftThreshold( ).
-  sft = Override min R-squared and set soft thresholding to a value
+  sft.value = Override min R-squared and set soft thresholding to a value
   
 OPTIONAL
   nThread = Number of parallel processors to use. Default is 1
@@ -47,7 +47,7 @@ Example
 make.modules <- function(voom.dat,
                          genes.signif,
                          Rsq.min = NULL,
-                         sft = NULL,
+                         sft.value = NULL,
                          minModuleSize = 20,
                          deepSplit = 3,
                          nThread=1, basename="basename"){
@@ -79,9 +79,9 @@ make.modules <- function(voom.dat,
     sft.select <- as.data.frame(sft$fitIndices) %>% 
       filter(SFT.R.sq  >= Rsq.min)
     power.t <- min(sft.select$Power)
-  } else(!is.null(sft)){
+  } else(!is.null(sft.value)){
     sft.select <- as.data.frame(sft$fitIndices) %>% 
-      filter(Power == sft)
+      filter(Power == sft.value)
     power.t <- unique(sft.select$Power)
   } else{
     stop("Please select min R-squared or soft threshold.")
