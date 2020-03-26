@@ -189,7 +189,7 @@ foreach(i = 1:length(to_plot)) %dopar% {
           select(-group, -adj.P.Val) %>% 
           distinct()
         #Make plot title w/o FDR
-        plot.title <- "Not in gene model"
+        plot.title <- "Not in model"
       }
       
       plot1 <- plot.dat.sub2 %>% 
@@ -208,28 +208,55 @@ foreach(i = 1:length(to_plot)) %dopar% {
         plot_list[[j]] <- plot1
       }
       
-    } else if(is.numeric(plot.dat.sub[[vars[j]]])){
-      #Filter data to fdr values for variable of interest
-      ##### Transform if provided
-      if(!is.null(vars_transform)){
-        transformation <- gsub("x", vars[j], vars_transform[j])
-        
-        plot.dat.sub2 <- plot.dat.sub %>% 
-          filter(group == vars[j]) %>% 
-          mutate_(transformation = transformation)
-        
-        x.var <- transformation
-      } else{
+    } else 
+    #Type = numeric
+    if(is.numeric(plot.dat.sub[[vars[j]]])){
+      #IF variable was in model
+      if(vars[j] %in% plot.dat.sub$group){
+        #Filter data to fdr values for variable
         plot.dat.sub2 <- plot.dat.sub %>% 
           filter(group == vars[j])
-                 
-        x.var <- vars[j]
+        #Extract plot title with FDR
+        plot.title <- paste("FDR=", 
+                            formatC(unique(plot.dat.sub2$adj.P.Val), 
+                                    format = "e", digits = 4), sep="")
+        
+        ##### Transform if provided
+        if(!is.null(vars_transform)){
+          transformation <- gsub("x", vars[j], vars_transform[j])
+          
+          plot.dat.sub2 <- plot.dat.sub2 %>% 
+            #transform
+            mutate_(transformation = transformation)
+          x.var <- transformation
+          
+        } else {
+          x.var <- vars[j]
+        }
+      } 
+      #Else variable was not in model
+      else{
+        plot.dat.sub2 <- plot.dat.sub %>% 
+          select(-group, -adj.P.Val) %>% 
+          distinct()
+        #Make plot title w/o FDR
+        plot.title <- "Not in model"
+        
+        ##### Transform if provided
+        if(!is.null(vars_transform)){
+          transformation <- gsub("x", vars[j], vars_transform[j])
+          
+          plot.dat.sub2 <- plot.dat.sub2 %>% 
+            #transform
+            mutate_(transformation = transformation)
+          x.var <- transformation
+          
+        } else {
+          x.var <- vars[j]
+        }
       }
-      #Extract plot title with FDR
-      plot.title <- paste("FDR=", 
-                          formatC(unique(plot.dat.sub2$adj.P.Val), 
-                          format = "e", digits = 4), sep="")
-      plot1 <- plot.dat.sub2 %>% 
+       
+        plot1 <- plot.dat.sub2 %>% 
         ggplot(aes_string(x=x.var, y="voom.count")) +
         geom_point(aes(color=color.var)) +
         theme_classic() +
