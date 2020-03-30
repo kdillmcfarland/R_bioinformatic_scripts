@@ -32,6 +32,8 @@ REQUIRED (one of)
 OPTIONAL
   nThread = Number of parallel processors to use. Default is 1
   basename = Character to prepend to output names. Default is 'basename'
+  outdir = Subdirectory name within results/ and figs/ in which to
+           save ouputs
 
 Example
   make.modules(voom.dat = dat.voom,
@@ -40,7 +42,8 @@ Example
              minModuleSize = 20,
              deepSplit = 3,
              nThread = 4,
-             basename = 'P259.2_allGenes')
+             basename = 'P259.2_allGenes',
+             outdir = NULL)
 "
 
 #################
@@ -50,7 +53,8 @@ make.modules <- function(voom.dat,
                          sft.value = NULL,
                          minModuleSize = 20,
                          deepSplit = 3,
-                         nThread=1, basename="basename"){
+                         nThread=1, basename="basename",
+                         outdir=NULL){
   require(tidyverse)
   
   ##### Load data ##### 
@@ -150,10 +154,17 @@ make.modules <- function(voom.dat,
   ##### Write results #####
   #Create directories
   dir.basename <- paste("module_", basename, 
-                    "_deepSplit", deepSplit, 
-                    "_minMod", minModuleSize, sep="")
-  dir.results <- paste("results/", dir.basename, sep="")
-  dir.figs <- paste("figs/", dir.basename, sep="")
+                        "_deepSplit", deepSplit, 
+                        "_minMod", minModuleSize, sep="")
+  if(!is.null(outdir)){
+    dir.results <- paste("results/", outdir, "/", 
+                         dir.basename, sep="")
+    dir.figs <- paste("figs/", outdir, "/", 
+                      dir.basename, sep="")
+  } else{
+    dir.results <- paste("results/", dir.basename, sep="")
+    dir.figs <- paste("figs/", dir.basename, sep="")
+  }
   
   dir.create(dir.results, showWarnings = FALSE)
   dir.create(dir.figs, showWarnings = FALSE)
