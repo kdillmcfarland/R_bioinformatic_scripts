@@ -190,6 +190,7 @@ make.modules <- function(voom.dat,
                    mod.net=mod.net,
                    genes.in.mod=mods,
                    prefix=basename,
-                   file.out=paste("results/", dir.basename, "/",basename,
+                   file.out=paste(dir.results,"/",
+                                  basename,
                                   "_genes_in_mod_DAVID.csv", sep=""))
 }
