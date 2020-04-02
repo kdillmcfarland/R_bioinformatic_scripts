@@ -148,8 +148,7 @@ library(foreach)
 registerDoParallel(cores=cores)
 
 ##########  Loop through genes ########## 
-foreach(i = 1:length(to_plot)) %dopar% {
-  print(i)
+foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
   
   #Subset data to gene/module of interest
   plot.dat.sub <- plot.dat %>% 
