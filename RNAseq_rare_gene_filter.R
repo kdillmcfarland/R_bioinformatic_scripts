@@ -53,8 +53,8 @@ rare.gene.filter <- function(dat, min.CPM,
   # Calculate number of samples that meet the cutoff per gene
   not.rare.samples <- rowSums(dat.cpm >= min.CPM)
   # List not rare genes to be RETAINED
-  not.rare.genes <- dat[not.rare.samples >= min.sample, ]$genes$geneName
-  
+  not.rare.genes <- names(not.rare.samples[not.rare.samples >= min.sample])
+
   ##### Filter data to remove rare genes #####
   # Filter counts
   dat.filter <- dat
