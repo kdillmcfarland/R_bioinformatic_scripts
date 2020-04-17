@@ -56,7 +56,7 @@ make.modules <- function(voom.dat,
                          nThread=1, basename="basename",
                          outdir=NULL){
   require(tidyverse)
-  require(WCGNA)
+  require(WGCNA)
   
   dir.create(path="figs", showWarnings = FALSE)
   dir.create(path="results", showWarnings = FALSE)
