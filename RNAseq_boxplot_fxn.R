@@ -114,13 +114,13 @@ if(is.character(pval.dat)){
 #Metadata
 if(class(voom.dat) == "EList"){
   meta.dat.loaded <- as.data.frame(voom.dat$targets) %>% 
-    dplyr::select(libID, all_of(color.var), all_of(vars))
+    dplyr::select(1, all_of(color.var), all_of(vars))
 } else if(is.character(meta.dat)){
   meta.dat.loaded <- read_csv(meta.dat) %>% 
-    dplyr::select(libID, all_of(color.var), all_of(vars))
+    dplyr::select(1, all_of(color.var), all_of(vars))
 } else if(class(meta.dat) == "data.frame"){
   meta.dat.loaded <- meta.dat %>% 
-    dplyr::select(libID, all_of(color.var), all_of(vars))
+    dplyr::select(1, all_of(color.var), all_of(vars))
 } else {
   stop("Metadata must be CSV on disk or part of EList/data.frame object in environment.")
 }
