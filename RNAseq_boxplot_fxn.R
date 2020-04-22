@@ -27,6 +27,7 @@ REQUIRED
              containing limma results output by 'extract.pval.R'
   meta.dat = Filepath to .csv containing metadata. Only required if 
              voom.dat is NOT a voom object
+  join.var = Variable name to use when joining data. Default is 'libID'
   genes.toPlot = Character vector listing genes to plot
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
@@ -65,7 +66,7 @@ Example
 
 #################
 
-plot.all <- function(voom.dat, pval.dat, meta.dat, 
+plot.all <- function(voom.dat, pval.dat, meta.dat, join.var="libID",
                      genes.toPlot, vars,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
@@ -114,13 +115,13 @@ if(is.character(pval.dat)){
 #Metadata
 if(class(voom.dat) == "EList"){
   meta.dat.loaded <- as.data.frame(voom.dat$targets) %>% 
-    dplyr::select(1, all_of(color.var), all_of(vars))
+    dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else if(is.character(meta.dat)){
   meta.dat.loaded <- read_csv(meta.dat) %>% 
-    dplyr::select(1, all_of(color.var), all_of(vars))
+    dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else if(class(meta.dat) == "data.frame"){
   meta.dat.loaded <- meta.dat %>% 
-    dplyr::select(1, all_of(color.var), all_of(vars))
+    dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else {
   stop("Metadata must be CSV on disk or part of EList/data.frame object in environment.")
 }
@@ -132,9 +133,9 @@ colnames(voom.dat.loaded)[1] <- "gene"
   
 # combine logCPM, meta, and pval data
 plot.dat <- voom.dat.loaded %>% 
-  pivot_longer(-1, names_to = "libID", 
+  pivot_longer(-1, names_to = join.var, 
                values_to = "voom.count") %>% 
-  left_join(meta.dat.loaded, by="libID") %>% 
+  left_join(meta.dat.loaded) %>% 
   left_join(pval.dat.loaded, by="gene") %>% 
   mutate(color.var = factor(get(color.var)))
 
