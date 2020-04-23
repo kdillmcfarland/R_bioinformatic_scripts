@@ -27,7 +27,7 @@ REQUIRED
              containing limma results output by 'extract.pval.R'
   meta.dat = Filepath to .csv containing metadata. Only required if 
              voom.dat is NOT a voom object
-  join.var = Variable name to use when joining data. Default is 'libID'
+  join.var = Variable name to use when joining data.
   genes.toPlot = Character vector listing genes to plot
   vars = Character vector of variables in voom.dat$targets OR meta.dat
          to plot
@@ -66,7 +66,7 @@ Example
 
 #################
 
-plot.all <- function(voom.dat, pval.dat, meta.dat, join.var="libID",
+plot.all <- function(voom.dat, pval.dat, meta.dat, join.var,
                      genes.toPlot, vars,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
