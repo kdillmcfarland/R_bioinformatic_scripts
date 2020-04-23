@@ -288,8 +288,12 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       select(interaction) %>% 
       unlist(use.names = FALSE)
     
+    var.levels.addtl <- c(paste(vars[1],vars[2],sep=":"),
+                          paste(vars[2],vars[1],sep=":"))
+    var.levels.all <- c(var.levels, var.levels.addtl)
+    
     #Create FDR plot title if exists in the data
-    if(any(var.levels %in% plot.dat.sub$group)){
+    if(any(var.levels.all %in% plot.dat.sub$group)){
       plot.dat.sub2 <- plot.dat.sub %>% 
         filter(grepl(":", group))
       
