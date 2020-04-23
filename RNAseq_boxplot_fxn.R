@@ -309,7 +309,8 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     
     #Interaction plot
     plot2 <- plot.dat.sub2 %>% 
-      ggplot(aes(x=get(vars[1]):get(vars[2]), y=voom.count)) +
+      ggplot(aes(x=paste(get(vars[1]),get(vars[2]), sep=":"), 
+                 y=voom.count)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(aes(color=color.var), height=0, width=0.2) +
       theme_classic() +
