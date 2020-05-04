@@ -332,16 +332,21 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       geom_jitter(aes(color=color.var), height=0, width=0.2) +
       theme_classic() +
       labs(title=plot.title, y="Normalized log2 expression",
-           x="") +
+           x="", color=color.var) +
       theme(legend.position = "right",
             plot.title = element_text(size=9))
-    
-    if(is.null(colors)){
-      plot2 <- plot2
-    } else{
-      plot2 <- plot2 + scale_color_manual(values=colors)
+
+##### Color points #####   
+    if(!is.null(colors)){
+      plot2 <- plot2 + 
+        scale_color_manual(values=colors)
     }
-    } else{plot2 <- NULL}
+    
+    }
+    
+  } else{
+      plot2 <- NULL
+      }
     
   #### Combine plots ####
   if (!is.null(gene.key)){
