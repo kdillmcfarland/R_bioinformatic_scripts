@@ -66,8 +66,8 @@ Example
 
 #################
 
-plot.all <- function(voom.dat, pval.dat, meta.dat, join.var,
-                     genes.toPlot, vars,
+plot.all <- function(voom.dat, pval.dat, meta.dat, contrast.mat=NULL,
+                     join.var, genes.toPlot, vars,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
                           outdir=NULL, name=NULL, 
@@ -290,15 +290,32 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     
     var.levels.addtl <- c(paste(vars[1],vars[2],sep=":"),
                           paste(vars[2],vars[1],sep=":"))
-    var.levels.all <- c(var.levels, var.levels.addtl)
+    
+    if(!is.null(contrast.mat)){
+      contrast.levels <- colnames(contrast.mat)
+      var.levels.all <- c(var.levels, var.levels.addtl, contrast.levels)
+    } else {
+      var.levels.all <- c(var.levels, var.levels.addtl)
+    }
     
     #Create FDR plot title if exists in the data
     if(any(var.levels.all %in% plot.dat.sub$group)){
-      plot.dat.sub2 <- plot.dat.sub %>% 
-        filter(grepl(":", group))
+      title.dat <- plot.dat.sub %>% 
+        filter(group %in% var.levels.all) %>% 
+        select(group, adj.P.Val) %>% 
+        distinct()
+
       
-      plot.title <- paste("FDR=", formatC(unique(plot.dat.sub2$adj.P.Val), 
-                          format = "e", digits = 4), sep="")
+      plot.title <- paste(title.dat$group, "FDR =", 
+                          formatC(title.dat$adj.P.Val,
+                                  format = "e", digits = 4), 
+                          sep=" ",collapse="\n")
+      
+      plot.dat.sub2 <- plot.dat.sub %>% 
+        filter(group %in% var.levels.all) %>% 
+        select(-adj.P.Val,-group) %>% 
+        distinct()
+      
     } else{
       plot.dat.sub2 <- plot.dat.sub %>% 
         select(-adj.P.Val,-group) %>% 
