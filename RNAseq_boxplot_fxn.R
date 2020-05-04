@@ -79,6 +79,8 @@ plot.all <- function(voom.dat, pval.dat, meta.dat, contrast.mat=NULL,
 library(tidyverse)
 # Multi-panel figures for ggplot
 library(cowplot)
+#pval annotation
+library(ggpubr)
 #Set seed
 set.seed(4389)
 
@@ -342,6 +344,30 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
         scale_color_manual(values=colors)
     }
     
+#### Add signif bars for contrasts #####     
+    if(!is.null(contrast.mat)){
+      
+      stat.dat <- title.dat %>% 
+        filter(adj.P.Val <= 0.05) %>% 
+        separate(group, into=c("group1","group2"), sep=" - ") %>% 
+        mutate(group1=gsub("_|-", ":", group1),
+               group2=gsub("_|-", ":", group2)) %>% 
+        mutate(adj.P.Val = formatC(adj.P.Val, 
+                                   format = "e", digits = 4))
+      
+      y.pos <- c() 
+      for(k in 1:nrow(stat.dat)){
+        scale.val <- k/10+1
+        temp <- max(plot.dat.sub2[,"voom.count"])*scale.val
+        
+        y.pos <- c(y.pos, temp)
+      }
+      
+      stat.dat <- stat.dat %>% 
+        mutate(y.position = y.pos)
+        
+      plot2 <- plot2 +
+        stat_pvalue_manual(stat.dat, label="adj.P.Val")
     }
     
   } else{
