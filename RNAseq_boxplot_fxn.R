@@ -307,7 +307,6 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
         select(group, adj.P.Val) %>% 
         distinct()
 
-      
       plot.title <- paste(title.dat$group, "FDR =", 
                           formatC(title.dat$adj.P.Val,
                                   format = "e", digits = 4), 
@@ -348,7 +347,11 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     if(!is.null(contrast.mat)){
       
       stat.dat <- title.dat %>% 
-        filter(adj.P.Val <= 0.05) %>% 
+        filter(adj.P.Val <= 0.05) 
+      
+      if(nrow(stat.dat)>0){
+        
+      stat.dat <- stat.dat %>% 
         separate(group, into=c("group1","group2"), sep=" - ") %>% 
         mutate(group1=gsub("_|-", ":", group1),
                group2=gsub("_|-", ":", group2)) %>% 
@@ -368,7 +371,7 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
         
       plot2 <- plot2 +
         stat_pvalue_manual(stat.dat, label="adj.P.Val")
-    }
+    }}
     
   } else{
       plot2 <- NULL
