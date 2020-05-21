@@ -24,7 +24,7 @@ OPTIONAL (Default is NULL / FALSE)
                  
 EXAMPLE
 corr.fxn(counts = counts, metadata = meta, match.by='libID',
-         corr='Pearson')
+         corr='pearson')
 "
 ################
 
