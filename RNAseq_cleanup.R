@@ -1,6 +1,6 @@
 "Clean default BRI RNA-seq data outputs
 
-Includes 'Final Annotation.xlsx', 'combined_summary-data.csv', and
+Includes 'Final Annotation.xlsx/.csv', 'combined_summary-data.csv', and
 'combined_counts.csv'
 
 #################
@@ -47,17 +47,24 @@ clean.RNAseq <- function(
               "mapped_reads_w_dups", "predicted_sex")
                      ){
   require(tidyverse)
-  require(readxl)
   require(stringr)
   require(lubridate)
   
   ##### Final annotation #####
   #Find file path
-  final.anno.file <- dir(data.dir, pattern = "*Final Annotation.xlsx", 
+  final.anno.file <- dir(data.dir, pattern = "*Final Annotation", 
                     full.names = TRUE) %>% 
     gsub("//", "/", .)
+  
   #Load file
-  final.anno <- read_excel(final.anno.file)
+  if(grepl("xls", final.anno.file)){
+    require(readxl)
+    final.anno <- read_excel(final.anno.file)
+  } else if(grepl("csv", final.anno.file)){
+    final.anno <- read_csv(final.anno.file)
+  } else{
+    stop("No annotation file found.")
+  }
   
   #Clean
   final.anno.format <- final.anno %>% 
