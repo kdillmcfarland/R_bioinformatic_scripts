@@ -62,7 +62,7 @@ clean.RNAseq <- function(
   #Clean
   final.anno.format <- final.anno %>% 
     #Select column of interest
-    select(anno.cols) %>% 
+    select(any_of(anno.cols)) %>% 
     #Rename ID columns
     rename_if(startsWith(names(.), "Proj"), ~"projID") %>% 
     rename_if(startsWith(names(.), "Donor"), ~"donorID") %>% 
@@ -85,7 +85,7 @@ clean.RNAseq <- function(
   
   #Extract data of interest
   summ.format <- summ %>% 
-    select(summ.cols) %>% 
+    select(any_of(summ.cols)) %>% 
     separate(libId, into = c("libID","flow.cell"), sep="_")
 
   ##### Combine metadata #####
