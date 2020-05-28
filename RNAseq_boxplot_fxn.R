@@ -107,7 +107,7 @@ if(is.character(pval.dat)){
   pval.dat.loaded <- read_csv(pval.dat) %>% 
     dplyr::select(1, adj.P.Val, group) %>% 
     filter(.[[1]] %in% genes.toPlot)
-} else if(class(pval.dat) == "data.frame"){
+} else if("data.frame" %in% class(pval.dat)){
   pval.dat.loaded <- pval.dat %>% 
     dplyr::select(1, adj.P.Val, group)%>% 
     filter(.[[1]] %in% genes.toPlot)
