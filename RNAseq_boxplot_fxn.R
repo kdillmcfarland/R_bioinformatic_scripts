@@ -89,7 +89,8 @@ set.seed(4389)
 if(is.character(voom.dat)){
   voom.dat.loaded <- read_csv(voom.dat) %>% 
     filter(.[[1]] %in% genes.toPlot)
-} else if(class(voom.dat) == "EList"){
+} else if(class(voom.dat) == "EList" |
+          class(voom.dat) == "DGEList"){
   voom.dat.loaded <- as.data.frame(voom.dat$E) %>% 
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
@@ -98,7 +99,7 @@ if(is.character(voom.dat)){
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
 } else {
-  stop("Voom data must be CSV on disk or EList/data.frame object in environment")
+  stop("Voom data must be CSV on disk or edgeR/data.frame object in environment")
 }
 
 #Pvalues
