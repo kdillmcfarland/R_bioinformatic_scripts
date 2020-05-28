@@ -89,12 +89,15 @@ set.seed(4389)
 if(is.character(voom.dat)){
   voom.dat.loaded <- read_csv(voom.dat) %>% 
     filter(.[[1]] %in% genes.toPlot)
-} else if(class(voom.dat) == "EList" |
-          class(voom.dat) == "DGEList"){
+} else if(class(voom.dat) == "EList"){
   voom.dat.loaded <- as.data.frame(voom.dat$E) %>% 
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
-} else if("data.frame" %in% class(voom.dat)){
+} else if(class(voom.dat) == "DGEList"){
+  voom.dat.loaded <- as.data.frame(voom.dat$counts) %>% 
+    rownames_to_column() %>% 
+    filter(rowname %in% genes.toPlot)
+}else if("data.frame" %in% class(voom.dat)){
   voom.dat.loaded <- voom.mods %>% 
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
@@ -116,18 +119,20 @@ if(is.character(pval.dat)){
 }
 
 #Metadata
-if(class(voom.dat) == "EList" |
-   class(voom.dat) == "DGEList"){
+if(class(voom.dat) == "EList"){
   meta.dat.loaded <- as.data.frame(voom.dat$targets) %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
-} else if(is.character(meta.dat)){
+} else if(class(voom.dat) == "DGEList"){
+  meta.dat.loaded <- as.data.frame(voom.dat$samples) %>% 
+    dplyr::select(join.var, all_of(color.var), all_of(vars))
+}else if(is.character(meta.dat)){
   meta.dat.loaded <- read_csv(meta.dat) %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else if("data.frame" %in% class(meta.dat)){
   meta.dat.loaded <- meta.dat %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else {
-  stop("Metadata must be CSV on disk or part of EList/data.frame object in environment.")
+  stop("Metadata must be CSV on disk or part of edgeR/data.frame object in environment.")
 }
 
 ########## Format data ########## 
