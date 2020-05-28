@@ -66,7 +66,7 @@ Example
 
 #################
 
-plot.all <- function(voom.dat, pval.dat, meta.dat, contrast.mat=NULL,
+plot.all <- function(voom.dat, pval.dat, meta.dat=NULL, contrast.mat=NULL,
                      join.var, genes.toPlot, vars,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
@@ -116,13 +116,14 @@ if(is.character(pval.dat)){
 }
 
 #Metadata
-if(class(voom.dat) == "EList"){
+if(class(voom.dat) == "EList" |
+   class(voom.dat) == "DGEList"){
   meta.dat.loaded <- as.data.frame(voom.dat$targets) %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else if(is.character(meta.dat)){
   meta.dat.loaded <- read_csv(meta.dat) %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
-} else if(class(meta.dat) == "data.frame"){
+} else if("data.frame" %in% class(meta.dat)){
   meta.dat.loaded <- meta.dat %>% 
     dplyr::select(join.var, all_of(color.var), all_of(vars))
 } else {
