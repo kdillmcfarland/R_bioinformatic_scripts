@@ -159,8 +159,8 @@ run.GSEA <- function(to.gsea, group.level,
     #Format results   
     enrich.result.clean <- enrich.result %>% 
       #Separate entrez ID lists
-      separate(geneID, into=pivot_names, sep="/") %>% 
-      pivot_longer(all_of(pivot_names), names_to = "rep", 
+      separate(geneID, into=as.character(pivot_names), sep="/") %>% 
+      pivot_longer(all_of(as.character(pivot_names)), names_to = "rep", 
                    values_to = "ENTREZID") %>% 
       drop_na(ENTREZID) %>% 
       #Match entrez IDs to gene IDs
