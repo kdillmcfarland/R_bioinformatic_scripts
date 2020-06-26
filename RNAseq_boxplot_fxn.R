@@ -98,7 +98,7 @@ if(is.character(voom.dat)){
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
 }else if("data.frame" %in% class(voom.dat)){
-  voom.dat.loaded <- voom.mods %>% 
+  voom.dat.loaded <- voom.dat %>% 
     rownames_to_column() %>% 
     filter(rowname %in% genes.toPlot)
 } else {
