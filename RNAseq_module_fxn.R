@@ -71,10 +71,15 @@ make.modules <- function(voom.dat,
     filter(rowname %in% genes.signif) %>% 
     column_to_rownames()
   
-  voom.signif$genes <- voom.signif$genes %>% 
-    rownames_to_column() %>% 
-    filter(rowname %in% genes.signif) %>% 
-    column_to_rownames()
+  if("geneName" %in% colnames(voom.signif$genes)){
+    voom.signif$genes <- voom.signif$genes %>% 
+      filter(geneName %in% genes.signif)
+  } else{
+    voom.signif$genes <- voom.signif$genes %>% 
+      rownames_to_column() %>% 
+      filter(rowname %in% genes.signif) %>% 
+      column_to_rownames()
+  }
   
   ##### Soft-thresholding #####
   allowWGCNAThreads(nThreads=nThread)
