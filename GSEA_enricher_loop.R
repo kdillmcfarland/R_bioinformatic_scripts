@@ -188,7 +188,7 @@ run.GSEA <- function(to.gsea, group.level,
              #Add columns for group info
              group=group.level, size.group = length(to.gsea)) %>% 
       #Reorder variables
-      dplyr::select(category, all_of(subcategory),
+      dplyr::select(category, subcategory,
                     group, size.group, 
                     size.overlap.category, size.category,
                     Description, size.overlap.term, size.term, `k/K`,
