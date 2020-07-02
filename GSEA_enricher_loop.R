@@ -73,14 +73,15 @@ enrich.fxn <- function(gene.list=NULL,
     output.name <- category 
     filename <- paste(outdir,"GSEA_",output.name, ".csv", sep="")
   } else if(is.null(basename) & !is.null(subcategory)){
-    output.name <- paste(category, subcategory, sep="_")
+    output.name <- paste(category, gsub(":", ".", subcategory), sep="_")
     filename <- paste(outdir,"GSEA_",output.name, ".csv", sep="")
   } else if(!is.null(basename) & is.null(subcategory)){
     output.name <- paste(basename, category, sep="_") 
     filename <- paste(outdir,"GSEA_",
                       output.name, ".csv", sep="")
   } else{ 
-    output.name <- paste(basename, category, subcategory, sep="_") 
+    output.name <- paste(basename, category, gsub(":", ".", subcategory),
+                         sep="_") 
     filename <- paste("results/GSEA/GSEA_",
                       output.name, ".csv", sep="")
   }
