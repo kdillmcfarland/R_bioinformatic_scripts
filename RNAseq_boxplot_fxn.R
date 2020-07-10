@@ -37,6 +37,8 @@ REQUIRED
   width, height = Dimensions of saved plot
 
 OPTIONAL
+   var.levels = If the levels of variables of interest do not exactly
+                match values in vars, provide a character vector of levels.
    interaction = Logical if should plot interaction of FIRST 2 vars.
                  Vars must be factor or character. Default is FALSE
    colors = If do not want to use default ggplot colors, list of colors
@@ -67,7 +69,7 @@ Example
 #################
 
 plot.all <- function(voom.dat, pval.dat, meta.dat=NULL, contrast.mat=NULL,
-                     join.var, genes.toPlot, vars,
+                     join.var, genes.toPlot, vars, var.levels=NULL,
                           interaction=FALSE,
                           color.var=NULL, colors=NULL,
                           outdir=NULL, name=NULL, 
@@ -173,21 +175,34 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     if(is.factor(plot.dat.sub[[vars[j]]]) |
        is.character(plot.dat.sub[[vars[j]]])) {
       
+      #Force first level if exist
       plot.dat.sub.fct <- plot.dat.sub %>% 
         mutate_at(vars(vars[j]), ~fct_relevel(as.factor(.), 
-                                           "none", after = 0))
+                                           "none", "media","control",
+                                           after = 0))
       
       #List levels of variable of interest
-      var.levels <- plot.dat.sub.fct %>% 
+      var.levels.temp <- plot.dat.sub.fct %>% 
         select(vars[j]) %>% 
         distinct() %>% 
         unlist(use.names = FALSE)
       
+      #IF variable levels given  
+      if(!is.null(var.levels) & 
+         var.levels[j] %in% plot.dat.sub.fct$group){
+        #Filter data to fdr values for levels assoc with variable of interest
+        plot.dat.sub2 <- plot.dat.sub.fct %>% 
+          filter(group %in% var.levels)
+        #Extract plot title with FDR
+        plot.title <- paste("FDR=", 
+                            formatC(unique(plot.dat.sub2$adj.P.Val), 
+                                    format = "e", digits = 4), sep="")
       #IF variable was in model
-      if(vars[j] %in% plot.dat.sub.fct$group){
+      }else if(vars[j] %in% plot.dat.sub.fct$group |
+         vars[j] %in% var.levels.temp){
       #Filter data to fdr values for levels assoc with variable of interest
       plot.dat.sub2 <- plot.dat.sub.fct %>% 
-        filter(group %in% var.levels |
+        filter(group %in% var.levels.temp |
                  group == vars[j])
       #Extract plot title with FDR
       plot.title <- paste("FDR=", 
@@ -290,7 +305,7 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
   #Interaction variable
   if(interaction){
     #List all interactions
-    var.levels <- plot.dat.sub %>% 
+    var.levels.temp <- plot.dat.sub %>% 
       select(vars[1],vars[2]) %>% 
       distinct() %>% 
       mutate(interaction = paste(get(vars[1]), get(vars[2]), sep=":")) %>% 
@@ -302,9 +317,9 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     
     if(!is.null(contrast.mat)){
       contrast.levels <- colnames(contrast.mat)
-      var.levels.all <- c(var.levels, var.levels.addtl, contrast.levels)
+      var.levels.all <- c(var.levels.temp, var.levels.addtl, contrast.levels)
     } else {
-      var.levels.all <- c(var.levels, var.levels.addtl)
+      var.levels.all <- c(var.levels.temp, var.levels.addtl)
     }
     
     #Create FDR plot title if exists in the data
