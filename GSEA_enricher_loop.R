@@ -1,7 +1,7 @@
 ##### Loop function #####
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
-                       ID.type=c("ENSEMBL","ENTREZ"),
+                       ID.type=NULL,
                        genome, 
                        basename=NULL, outdir="results/GSEA/"){
   
@@ -93,8 +93,8 @@ enrich.fxn <- function(gene.list=NULL,
 }
 
 ##### GSEA function #####
-run.GSEA <- function(to.gsea, group.level, ID.type,
-                     genome, category, subcategory, ...){
+run.GSEA <- function(to.gsea, group.level, 
+                     genome, category, subcategory, ID.type, ...){
   
   #Convert ENSEMBL IDs if needed
   if(ID.type == "ENSEMBL"){
