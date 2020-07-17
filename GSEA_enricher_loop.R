@@ -54,7 +54,8 @@ enrich.fxn <- function(gene.list=NULL,
                                            group.level = group.level,
                                            genome=genome, 
                                            category=category,
-                                           subcategory=subcategory)
+                                           subcategory=subcategory,
+                                           ID.type=ID.type)
     }
 ##### Stop if no genes provided #####
   } else{
