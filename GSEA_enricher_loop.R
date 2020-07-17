@@ -1,6 +1,7 @@
 ##### Loop function #####
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
+                       category, subcategory=NULL,
                        ID.type=NULL,
                        genome, 
                        basename=NULL, outdir="results/GSEA/"){
