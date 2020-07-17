@@ -1,8 +1,8 @@
 ##### Loop function #####
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
-                       category, 
-                       subcategory=NULL,
+                       ID.type=c("ENSEMBL","ENTREZ"),
+                       category, subcategory=NULL,
                        genome, 
                        basename=NULL, outdir="results/GSEA/"){
   
@@ -92,14 +92,23 @@ enrich.fxn <- function(gene.list=NULL,
 }
 
 ##### GSEA function #####
-run.GSEA <- function(to.gsea, group.level, 
+run.GSEA <- function(to.gsea, group.level, ID.type,
                      genome, category, subcategory, ...){
-  #Convert gene list to Entrez ID
-  gene.entrez <- clusterProfiler::bitr(to.gsea, fromType="ENSEMBL",
-                                       toType=c("ENTREZID","SYMBOL"),
-                                       OrgDb=genome)
   
-  gene.entrez.list <- gene.entrez$ENTREZID
+  #Convert ENSEMBL IDs if needed
+  if(ID.type == "ENSEMBL"){
+    #Convert gene list to Entrez ID
+    gene.entrez <- clusterProfiler::bitr(to.gsea, fromType="ENSEMBL",
+                                         toType=c("ENTREZID","SYMBOL"),
+                                         OrgDb=genome)
+    
+    gene.entrez.list <- gene.entrez$ENTREZID
+  } else if(ID.type =="ENTREZ"){
+    gene.entrez.list <- to.gsea
+  } else{
+    stop("Function only allows ENSEMBL or ENTREZ IDs")
+  }
+  
 
   #Get database of interest
   if(genome$packageName == "org.Hs.eg.db"){
