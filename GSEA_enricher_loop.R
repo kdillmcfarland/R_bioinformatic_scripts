@@ -2,7 +2,6 @@
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
                        ID.type=c("ENSEMBL","ENTREZ"),
-                       category, subcategory=NULL,
                        genome, 
                        basename=NULL, outdir="results/GSEA/"){
   
@@ -39,7 +38,8 @@ enrich.fxn <- function(gene.list=NULL,
                                          group.level = group.level,
                                          genome=genome, 
                                          category=category,
-                                         subcategory=subcategory)
+                                         subcategory=subcategory,
+                                         ID.type=ID.type)
     }
     
 ##### Loop through gene lists #####
