@@ -104,6 +104,9 @@ run.GSEA <- function(to.gsea, group.level, ID.type,
     
     gene.entrez.list <- gene.entrez$ENTREZID
   } else if(ID.type =="ENTREZ"){
+    gene.entrez <- clusterProfiler::bitr(to.gsea, fromType="ENTREZID",
+                                         toType=c("ENSEMBL","SYMBOL"),
+                                         OrgDb=genome)
     gene.entrez.list <- to.gsea
   } else{
     stop("Function only allows ENSEMBL or ENTREZ IDs")
