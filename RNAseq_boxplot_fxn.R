@@ -194,9 +194,9 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
         plot.dat.sub2 <- plot.dat.sub.fct %>% 
           filter(group %in% var.levels)
         #Extract plot title with FDR
-        plot.title <- paste("FDR=", 
+        plot.title <- paste(unique(plot.dat.sub2$group), " FDR=", 
                             formatC(unique(plot.dat.sub2$adj.P.Val), 
-                                    format = "e", digits = 4), sep="")
+                                    format = "e", digits = 4), sep="", collapse="/n")
       #IF variable was in model
       }else if(vars[j] %in% plot.dat.sub.fct$group |
          vars[j] %in% var.levels.temp){
