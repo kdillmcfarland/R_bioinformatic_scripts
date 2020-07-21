@@ -217,6 +217,8 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       }
       
       plot1 <- plot.dat.sub2 %>% 
+        select(-group, -adj.P.Val) %>% 
+        distinct() %>% 
         ggplot(aes_string(x=vars[j], y="voom.count")) +
         geom_boxplot(outlier.shape = NA) +
         geom_jitter(aes(color=color.var), height=0, width=0.2) +
