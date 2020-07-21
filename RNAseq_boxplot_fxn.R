@@ -85,6 +85,7 @@ library(cowplot)
 library(ggpubr)
 #Set seed
 set.seed(4389)
+dir.create(outdir, showWarnings = FALSE)
 
 ########## Load data ########## 
 #Voom normalized counts
