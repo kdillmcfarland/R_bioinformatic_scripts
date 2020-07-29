@@ -23,6 +23,7 @@ REQUIRED
   min.CPM = minimum counts per million the genes must reach
   name = name of results object. Saved in global environment. Default is
          'dat.filter'
+  names = column name of genes. Default is 'geneName'
   
 REQUIRED (Use one only)
   min.sample = Numeric minimum number of samples that must reach min.CPM
@@ -32,7 +33,7 @@ REQUIRED (Use one only)
 
 #####
 
-rare.gene.filter <- function(dat, min.CPM,
+rare.gene.filter <- function(dat, min.CPM, names="geneName",
                              min.sample=NULL, min.pct=NULL,
                              name="dat.filter"){
   require(tidyverse)
@@ -59,12 +60,12 @@ rare.gene.filter <- function(dat, min.CPM,
   # Filter counts
   dat.filter <- dat
   dat.filter$counts <- as.data.frame(dat.filter$counts) %>% 
-    rownames_to_column("geneName") %>% 
-    dplyr::filter(geneName %in% not.rare.genes) %>% 
-    column_to_rownames("geneName")
+    rownames_to_column() %>% 
+    dplyr::filter(rowname %in% not.rare.genes) %>% 
+    column_to_rownames()
   # Filter gene key
   dat.filter$genes <- as.data.frame(dat.filter$genes) %>% 
-    dplyr::filter(geneName %in% not.rare.genes)
+    dplyr::filter(get(names) %in% not.rare.genes)
   
   ##### Save to environment #####
   assign(name, dat.filter, envir = .GlobalEnv)
