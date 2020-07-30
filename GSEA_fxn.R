@@ -45,7 +45,8 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
       
       #Run GSEA with fgsea
       fg.result <- fgsea::fgsea(pathways = myGO, 
-                                stats = genes.temp) %>% 
+                                stats = genes.temp,
+                                eps=0) %>% 
         as.data.frame()
       
       #Run GSEA with gage
@@ -63,7 +64,8 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
         pivot_longer(-pathway) %>% 
         group_by(pathway) %>% 
         summarise(min.q = min(value),
-                  name = name[value == min.q])
+                  name = name[value == min.q],
+                  .groups = "keep")
       
       ga.result.format <- ups %>% 
         filter(pathway %in% filter(gs.signif, name == "q.val.x")$pathway) %>% 
@@ -78,7 +80,7 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
         select(pathway, padj, NES) %>% 
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
         rename(fgsea.FDR = padj, fgsea.NES = NES) %>% 
-        full_join(ga.result.format) %>% 
+        full_join(ga.result.format, by="pathway") %>% 
         select(pathway:fgsea.FC, q.val, stat.mean, gage.FC) %>% 
         rename(gage.FDR = q.val, gage.NES = stat.mean) %>% 
         mutate(concordant = ifelse(fgsea.FDR <= 0.05 & gage.FDR <= 0.05 & 
