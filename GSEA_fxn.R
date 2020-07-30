@@ -82,7 +82,8 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
         select(pathway:fgsea.FC, q.val, stat.mean, gage.FC) %>% 
         rename(gage.FDR = q.val, gage.NES = stat.mean) %>% 
         mutate(concordant = ifelse(fgsea.FDR <= 0.05 & gage.FDR <= 0.05 & 
-                                     fgsea.FC == gage.FC, "signif.concordant", NA))
+                            fgsea.FC == gage.FC, "signif.concordant", NA)) %>% 
+        mutate(group = genes)
       
       #save to object
       all.results[[genes]] <- gsea.result
@@ -90,5 +91,6 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
   
   #Unlist results into 1 df
   all.results.df <- do.call(rbind.data.frame, all.results)
-  assign("GSEA.result", all.results.df)
+  rownames(all.results.df) <- NULL
+  assign("GSEA.result", all.results.df, envir = .GlobalEnv)
 }
