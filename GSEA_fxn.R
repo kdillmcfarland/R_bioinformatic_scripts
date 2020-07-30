@@ -20,13 +20,12 @@ Input parameters:
 REQUIRED
   gene_list = named list object with named numeric vectors of gene symbols and logFC
   gmt_file = character giving full path the gene ontology GMT file
-  fdr = numeric FDR cutoff for significance
-  
+
 "
 
 #################
 
-GSEA <- function(gene_list, gmt_file, fdr=0.05){
+GSEA <- function(gene_list, gmt_file){
   require(tidyverse)
   require(fgsea)
   require(gage)
@@ -83,9 +82,7 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
         rename(fgsea.FDR = padj, fgsea.NES = NES) %>% 
         full_join(ga.result.format, by="pathway") %>% 
         select(pathway:fgsea.FC, q.val, stat.mean, gage.FC) %>% 
-        rename(gage.FDR = q.val, gage.NES = stat.mean) %>% 
-        mutate(concordant = ifelse(fgsea.FDR <= 0.05 & gage.FDR <= 0.05 & 
-                            fgsea.FC == gage.FC, "signif.concordant", NA)) %>% 
+        rename(gage.FDR = q.val, gage.NES = stat.mean)  %>% 
         mutate(group = genes)
       
       #save to object
