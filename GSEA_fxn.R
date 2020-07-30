@@ -95,5 +95,12 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
   #Unlist results into 1 df
   all.results.df <- do.call(rbind.data.frame, all.results)
   rownames(all.results.df) <- NULL
-  assign("GSEA.result", all.results.df, envir = .GlobalEnv)
+  
+  GO.name <- strsplit(basename(gmt_file), split="[.]")
+  obj.name <- paste(GO.name[[1]][[1]], "GSEA.result", sep="_")
+  assign(obj.name, all.results.df, envir = .GlobalEnv)
+  
+  dir.create("results/GSEA_FoldChange/", showWarnings = FALSE)
+  filename <- paste("results/GSEA_FoldChange/", obj.name, ".csv", sep="")
+  write_csv(all.results.df, path = filename)
 }
