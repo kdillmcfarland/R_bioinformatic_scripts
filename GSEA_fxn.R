@@ -38,6 +38,7 @@ GSEA <- function(gene_list, gmt_file, fdr=0.05){
   
   #Loop through each list in the gene_list object
   for(genes in names(gene_list)){
+    message(genes)
       #Extact 1 gene list
       genes.temp <- gene_list[[genes]]
       #Order by fold change
