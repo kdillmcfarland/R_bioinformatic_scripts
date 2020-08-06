@@ -25,7 +25,7 @@ REQUIRED
 
 #################
 
-GSEA <- function(gene_list, gmt_file){
+GSEA <- function(gene_list, gmt_file, name=NULL){
   require(tidyverse)
   require(fgsea)
   require(gage)
@@ -98,6 +98,11 @@ GSEA <- function(gene_list, gmt_file){
   assign(obj.name, all.results.df, envir = .GlobalEnv)
   
   dir.create("results/GSEA_FoldChange/", showWarnings = FALSE)
-  filename <- paste("results/GSEA_FoldChange/", obj.name, ".csv", sep="")
+  if(!is.null(name)){
+    filename <- paste("results/GSEA_FoldChange/", obj.name, "_", name,
+                      ".csv", sep="")
+  } else{
+    filename <- paste("results/GSEA_FoldChange/", obj.name, ".csv", sep="")
+  }
   write_csv(all.results.df, path = filename)
 }
