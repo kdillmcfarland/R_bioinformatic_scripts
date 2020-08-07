@@ -37,6 +37,7 @@ REQUIRED
          eBayes(lmFit(voom.dat, model...)) or similar
 
 OPTIONAL
+  gene.dat = gene annotation. Default is NULL
   name = Character string defining name of outputs. Default is 'pval'
   summary = Logical if should calculate summary table with total
             significant genes/modules at several FDR cutoffs. Default 
@@ -62,6 +63,7 @@ Example
 
 #################
 extract.pval <- function(model, voom.dat, eFit, 
+                         gene.dat=NULL,
                          name="pval",
                          summary=FALSE, 
                          contrast.mat=NULL,
@@ -111,6 +113,13 @@ extract.pval <- function(model, voom.dat, eFit,
     pval.result <- bind_rows(pval.result, pval.temp)
   
   }
+  
+  #Add hgnc symbol
+  if(!is.null(gene.dat)){
+    pval.result <- pval.result %>% 
+      left_join(gene.dat)
+  }
+  
   assign(name, pval.result, envir = .GlobalEnv)
   
 #Add FC group if selected
