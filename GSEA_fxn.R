@@ -69,9 +69,10 @@ GSEA <- function(gene_list, gmt_file,
       }
       
       #Run GSEA with fgsea
-      fg.result <- fgsea::fgsea(pathways = myGO, 
+      fg.result <- fgsea::fgseaSimple(pathways = myGO, 
                                 stats = genes.temp,
-                                eps=0,
+                                nperm=1000,
+                                #eps=0,
                                 scoreType=scoreType) %>% 
         as.data.frame()
       
