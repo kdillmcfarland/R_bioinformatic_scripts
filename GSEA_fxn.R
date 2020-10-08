@@ -174,9 +174,9 @@ GSEA <- function(gene_list, gmt_file,
   dir.create(plotdir, showWarnings = FALSE, recursive = TRUE)
   if(!is.null(name)){
     plotname <- paste(plotdir, obj.name, "_", name,
-                      ".csv", sep="")
+                      ".pdf", sep="")
   } else{
-    plotname <- paste(plotdir, obj.name, ".csv", sep="")
+    plotname <- paste(plotdir, obj.name, ".pdf", sep="")
   }
   ggsave(plotname, plot, 
          width = length(unique(to.plot$group)), 
