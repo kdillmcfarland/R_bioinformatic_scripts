@@ -26,29 +26,35 @@ REQUIRED
 #################
 
 GSEA <- function(gene_list, gmt_file, name=NULL){
+  #### Setup ####
   require(tidyverse)
   require(fgsea)
   require(gage)
   
   #Blank list to hold results
   all.results <- list()
+  
+  #### Data ####
   #Load gene ontology
   myGO <- fgsea::gmtPathways(gmt_file)
   
+  #### Loop ####
   #Loop through each list in the gene_list object
   for(genes in names(gene_list)){
     message(genes)
-      #Extact 1 gene list
+      #Extract 1 gene list
       genes.temp <- gene_list[[genes]]
       #Order by fold change
       genes.temp <- sort(genes.temp, decreasing = TRUE)
       
+      #### FGSEA ####
       #Run GSEA with fgsea
       fg.result <- fgsea::fgsea(pathways = myGO, 
                                 stats = genes.temp,
                                 eps=0) %>% 
         as.data.frame()
       
+      #### GAGE ####
       #Run GSEA with gage
       ga.result <- gage::gage(genes.temp, gsets=myGO)
       
@@ -75,22 +81,25 @@ GSEA <- function(gene_list, gmt_file, name=NULL){
         bind_rows(ga.result.format) %>% 
         mutate(gage.FC = ifelse(is.na(gage.FC), "down", gage.FC))
       
-      #Combine two methods.
+      #### Combine results ####
       gsea.result <- fg.result %>% 
         dplyr::select(pathway, padj, ES, NES, size) %>% 
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
         dplyr::rename(fgsea.FDR = padj, fgsea.NES = NES, 
                fgsea.ES=ES, fgsea.size=size) %>% 
         full_join(ga.result.format, by="pathway") %>% 
-        dplyr::select(pathway:fgsea.FC, q.val, p.geomean, stat.mean, set.size, gage.FC) %>% 
-        dplyr::rename(gage.FDR = q.val, gage.geomean = p.geomean, gage.statmean = stat.mean,
-               gage.size=set.size)  %>% 
+        dplyr::select(pathway:fgsea.FC, q.val, p.geomean,
+                      stat.mean, set.size, gage.FC) %>% 
+        dplyr::rename(gage.FDR = q.val, gage.geomean = p.geomean, 
+                      gage.statmean = stat.mean,
+                      gage.size=set.size)  %>% 
         mutate(group = genes)
       
-      #save to object
+      #### Save ####
       all.results[[genes]] <- gsea.result
   }
   
+  #### Format output ####
   #Unlist results into 1 df
   all.results.df <- do.call(rbind.data.frame, all.results)
   rownames(all.results.df) <- NULL
