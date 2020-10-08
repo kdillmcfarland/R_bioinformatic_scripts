@@ -24,12 +24,17 @@ REQUIRED
 OPTIONAL
   name = character to add to output file names. Default NULL
   outdir = Output directory. Default 'results/GSEA/'
+  plot = logical if should produce a plot of enrichment sources. Default FALSE
+  plot.fdr = Significance cutoff for terms to include in plot. Default 0.05
+  plotdir = Output directory for plot. Default the same as outdir except
+            in 'figs' instead of 'results'
 "
 
 #################
 
 GSEA <- function(gene_list, gmt_file, 
                  name=NULL, outdir="results/GSEA/",
+                 plot=FALSE, plot.fdr=0.05, plotdir='figs/GSEA/'){
   #### Setup ####
   require(tidyverse)
   require(fgsea)
@@ -120,4 +125,48 @@ GSEA <- function(gene_list, gmt_file,
     filename <- paste(outdir, obj.name, ".csv", sep="")
   }
   write_csv(all.results.df, path = filename)
+  
+  #### Plot ####
+  #Filter to significant results
+  to.plot <- all.results.df %>% 
+    filter(fgsea.FDR <= plot.fdr & gage.FDR <= plot.fdr & 
+             fgsea.FC == gage.FC)
+  
+  plot.dat <- all.results.df %>% 
+    #Significant terms
+    filter(pathway %in% to.plot$pathway) %>% 
+    #color by significance
+    mutate(Significance = ifelse(fgsea.FDR <= 0.05, "FDR < 0.05",
+                                 "NS")) 
+  
+  #Enrichment score limits
+  plot.lim <- max(abs(plot.dat$fgsea.NES))
+   
+  plot <- plot.dat %>%  
+    ggplot(aes(reorder(pathway, fgsea.NES), fgsea.NES)) +
+    geom_segment(aes(reorder(pathway, fgsea.NES), 
+                      xend=pathway, y=0, yend=fgsea.NES)) +
+    geom_point(size=3, aes(fill = Significance),
+               shape=21, stroke=1) +
+    geom_hline(yintercept = 0) +
+    
+    scale_fill_manual(values=c("firebrick", "grey")) +
+    lims(y=c(-plot.lim,plot.lim)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title="GSEA") + 
+    facet_grid( ~ group) +
+    theme_bw()
+  
+  #### Save plot ####
+  dir.create(plotdir, showWarnings = FALSE, recursive = TRUE)
+  if(!is.null(name)){
+    plotname <- paste(plotdir, obj.name, "_", name,
+                      ".csv", sep="")
+  } else{
+    plotname <- paste(plotdir, obj.name, ".csv", sep="")
+  }
+  ggsave(plotname, plot, 
+         width = length(unique(to.plot$group)), 
+         height = length(unique(to.plot$pathway)))
 }
