@@ -60,7 +60,7 @@ GSEA <- function(gene_list, gmt_file, name=NULL){
         rownames_to_column("pathway")
       #Combine most significant q value for each term
       gs.signif <- full_join(ups, downs, by=c("pathway", "set.size")) %>% 
-        select(pathway, q.val.x, q.val.y, set.size) %>% 
+        dplyr::select(pathway, q.val.x, q.val.y, set.size) %>% 
         pivot_longer(-c(pathway,set.size)) %>% 
         group_by(pathway, set.size) %>% 
         summarise(min.q = min(value),
@@ -77,13 +77,13 @@ GSEA <- function(gene_list, gmt_file, name=NULL){
       
       #Combine two methods.
       gsea.result <- fg.result %>% 
-        select(pathway, padj, ES, NES, size) %>% 
+        dplyr::select(pathway, padj, ES, NES, size) %>% 
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
-        rename(fgsea.FDR = padj, fgsea.NES = NES, 
+        dplyr::rename(fgsea.FDR = padj, fgsea.NES = NES, 
                fgsea.ES=ES, fgsea.size=size) %>% 
         full_join(ga.result.format, by="pathway") %>% 
-        select(pathway:fgsea.FC, q.val, p.geomean, stat.mean, set.size, gage.FC) %>% 
-        rename(gage.FDR = q.val, gage.geomean = p.geomean, gage.statmean = stat.mean,
+        dplyr::select(pathway:fgsea.FC, q.val, p.geomean, stat.mean, set.size, gage.FC) %>% 
+        dplyr::rename(gage.FDR = q.val, gage.geomean = p.geomean, gage.statmean = stat.mean,
                gage.size=set.size)  %>% 
         mutate(group = genes)
       
