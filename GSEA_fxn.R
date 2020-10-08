@@ -57,10 +57,22 @@ GSEA <- function(gene_list, gmt_file,
       genes.temp <- sort(genes.temp, decreasing = TRUE)
       
       #### FGSEA ####
+      #Set score type based on fold change
+      if(min(genes.temp) < 0 & max(genes.temp) > 0){
+        scoreType <- "std"
+      } else if(max(genes.temp) <= 0){
+        scoreType <- "neg"
+      } else if(min(genes.temp) >= 0){
+        scoreType <- "pos"
+      } else{
+        stop("Could not determine score type from fold changes.")
+      }
+      
       #Run GSEA with fgsea
       fg.result <- fgsea::fgsea(pathways = myGO, 
                                 stats = genes.temp,
-                                eps=0) %>% 
+                                eps=0,
+                                scoreType=scoreType) %>% 
         as.data.frame()
       
       #### GAGE ####
