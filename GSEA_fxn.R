@@ -149,8 +149,11 @@ GSEA <- function(gene_list, gmt_file,
     #Significant terms
     filter(pathway %in% to.plot$pathway) %>% 
     #color by significance
-    mutate(Significance = ifelse(fgsea.FDR <= 0.05, "FDR < 0.05",
-                                 "NS")) 
+    mutate(Significance = ifelse(fgsea.FDR <= 0.01, "FDR < 0.01",
+                          ifelse(fgsea.FDR <= 0.05, "FDR < 0.05",
+                          ifelse(fgsea.FDR <= 0.1, "FDR < 0.1",
+                          ifelse(fgsea.FDR <= 0.2, "FDR < 0.2",
+                                 "NS"))))) 
   
   #Enrichment score limits
   plot.lim <- max(abs(plot.dat$fgsea.NES))+0.2
@@ -163,7 +166,11 @@ GSEA <- function(gene_list, gmt_file,
                shape=21, stroke=1) +
     geom_hline(yintercept = 0) +
     
-    scale_fill_manual(values=c("firebrick", "grey")) +
+    scale_fill_manual(values=c("FDR < 0.01"="#a50026", 
+                               "FDR < 0.05"="#f46d43",
+                               "FDR < 0.1"="#fdae61",
+                               "FDR < 0.2"="#ffffbf",
+                               "NS"="grey")) +
     lims(y=c(-plot.lim,plot.lim)) +
     coord_flip() +
     labs(x="Pathway", y="Normalized Enrichment Score",
