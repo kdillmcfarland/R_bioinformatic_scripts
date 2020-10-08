@@ -21,11 +21,15 @@ REQUIRED
   gene_list = named list object with named numeric vectors of gene symbols and logFC
   gmt_file = character giving full path the gene ontology GMT file
 
+OPTIONAL
+  name = character to add to output file names. Default NULL
+  outdir = Output directory. Default 'results/GSEA/'
 "
 
 #################
 
-GSEA <- function(gene_list, gmt_file, name=NULL){
+GSEA <- function(gene_list, gmt_file, 
+                 name=NULL, outdir="results/GSEA/",
   #### Setup ####
   require(tidyverse)
   require(fgsea)
@@ -108,12 +112,12 @@ GSEA <- function(gene_list, gmt_file, name=NULL){
   obj.name <- paste(GO.name[[1]][[1]], "GSEA.result", sep="_")
   assign(obj.name, all.results.df, envir = .GlobalEnv)
   
-  dir.create("results/GSEA_FoldChange/", showWarnings = FALSE)
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   if(!is.null(name)){
-    filename <- paste("results/GSEA_FoldChange/", obj.name, "_", name,
+    filename <- paste(outdir, obj.name, "_", name,
                       ".csv", sep="")
   } else{
-    filename <- paste("results/GSEA_FoldChange/", obj.name, ".csv", sep="")
+    filename <- paste(outdir, obj.name, ".csv", sep="")
   }
   write_csv(all.results.df, path = filename)
 }
