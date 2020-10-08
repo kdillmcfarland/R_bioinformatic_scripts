@@ -144,6 +144,7 @@ GSEA <- function(gene_list, gmt_file,
     filter(fgsea.FDR <= plot.fdr & gage.FDR <= plot.fdr & 
              fgsea.FC == gage.FC)
   
+  if(nrow(to.plot > 0)){
   plot.dat <- all.results.df %>% 
     #Significant terms
     filter(pathway %in% to.plot$pathway) %>% 
@@ -181,4 +182,7 @@ GSEA <- function(gene_list, gmt_file,
   ggsave(plotname, plot, 
          width = length(unique(to.plot$group)), 
          height = length(unique(to.plot$pathway)))
+} else{
+  message("No significant terms plotted.")
+}
 }
