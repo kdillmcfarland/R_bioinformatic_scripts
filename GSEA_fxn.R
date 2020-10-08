@@ -142,8 +142,7 @@ GSEA <- function(gene_list, gmt_file,
   #### Plot ####
   #Filter to significant results
   to.plot <- all.results.df %>% 
-    filter(fgsea.FDR <= plot.fdr & gage.FDR <= plot.fdr & 
-             fgsea.FC == gage.FC)
+    filter(fgsea.FDR <= plot.fdr)
   
   if(nrow(to.plot > 0)){
   plot.dat <- all.results.df %>% 
@@ -154,7 +153,7 @@ GSEA <- function(gene_list, gmt_file,
                                  "NS")) 
   
   #Enrichment score limits
-  plot.lim <- max(abs(plot.dat$fgsea.NES))
+  plot.lim <- max(abs(plot.dat$fgsea.NES))+0.2
    
   plot <- plot.dat %>%  
     ggplot(aes(reorder(pathway, fgsea.NES), fgsea.NES)) +
@@ -168,7 +167,7 @@ GSEA <- function(gene_list, gmt_file,
     lims(y=c(-plot.lim,plot.lim)) +
     coord_flip() +
     labs(x="Pathway", y="Normalized Enrichment Score",
-         title="GSEA") + 
+         title="GSEA", fill = "FGSEA significance") + 
     facet_grid( ~ group) +
     theme_bw()
   
@@ -181,7 +180,7 @@ GSEA <- function(gene_list, gmt_file,
     plotname <- paste(plotdir, obj.name, ".pdf", sep="")
   }
   ggsave(plotname, plot, 
-         width = length(unique(to.plot$group)), 
+         width = 10+length(unique(to.plot$group))*10, 
          height = length(unique(to.plot$pathway)))
 } else{
   message("No significant terms plotted.")
