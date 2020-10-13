@@ -63,9 +63,13 @@ rare.gene.filter <- function(dat, min.CPM, names="geneName",
     rownames_to_column() %>% 
     dplyr::filter(rowname %in% not.rare.genes) %>% 
     column_to_rownames()
-  # Filter gene key
-  dat.filter$genes <- as.data.frame(dat.filter$genes) %>% 
-    dplyr::filter(get(names) %in% not.rare.genes)
+  
+  #If gene info exist, filter as well
+  if(!is.null(dat.filter$genes)){
+    # Filter gene key
+    dat.filter$genes <- as.data.frame(dat.filter$genes) %>% 
+      dplyr::filter(get(names) %in% not.rare.genes)
+  }
   
   ##### Save to environment #####
   assign(name, dat.filter, envir = .GlobalEnv)
