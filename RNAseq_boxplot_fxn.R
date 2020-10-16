@@ -188,16 +188,17 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
         unlist(use.names = FALSE)
       
       #IF variable levels given  
-      if(!is.null(var.levels) & 
-         var.levels[j] %in% plot.dat.sub.fct$group){
-        #Filter data to fdr values for levels assoc with variable of interest
-        plot.dat.sub2 <- plot.dat.sub.fct %>% 
-          filter(group %in% var.levels)
-        #Extract plot title with FDR
-        plot.title <- paste(unique(plot.dat.sub2$group), " FDR=", 
-                            formatC(unique(plot.dat.sub2$adj.P.Val), 
-                                    format = "e", digits = 4), sep="", collapse="\n")
-      #IF variable was in model
+      if(!is.null(var.levels)){
+        if(var.levels[j] %in% plot.dat.sub.fct$group){
+          #Filter data to fdr values for levels assoc with variable of interest
+          plot.dat.sub2 <- plot.dat.sub.fct %>% 
+            filter(group %in% var.levels)
+          #Extract plot title with FDR
+          plot.title <- paste(unique(plot.dat.sub2$group), " FDR=", 
+                              formatC(unique(plot.dat.sub2$adj.P.Val), 
+                                      format = "e", digits = 4), sep="", collapse="\n")
+        }
+     #IF variable was in model
       }else if(vars[j] %in% plot.dat.sub.fct$group |
          vars[j] %in% var.levels.temp){
       #Filter data to fdr values for levels assoc with variable of interest
