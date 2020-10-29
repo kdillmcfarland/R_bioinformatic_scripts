@@ -90,8 +90,9 @@ GSEA <- function(gene_list, gmt_file,
       gs.signif <- full_join(ups, downs, by=c("pathway", "set.size")) %>% 
         dplyr::select(pathway, q.val.x, q.val.y, set.size) %>% 
         pivot_longer(-c(pathway,set.size)) %>% 
+        drop_na(value) %>% 
         group_by(pathway, set.size) %>% 
-        summarise(min.q = min(value),
+        summarise(min.q = min(value, na.rm=TRUE),
                   name = name[value == min.q],
                   .groups = "keep")
       
