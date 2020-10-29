@@ -141,6 +141,7 @@ GSEA <- function(gene_list, gmt_file,
   write_csv(all.results.df, path = filename)
   
   #### Plot ####
+  if(plot){
   #Filter to significant results
   to.plot <- all.results.df %>% 
     filter(fgsea.FDR <= plot.fdr)
@@ -193,5 +194,5 @@ GSEA <- function(gene_list, gmt_file,
          limitsize = FALSE)
 } else{
   message("No significant terms plotted.")
-}
+}}
 }
