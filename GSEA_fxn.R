@@ -189,7 +189,8 @@ GSEA <- function(gene_list, gmt_file,
   }
   ggsave(plotname, plot, 
          width = 10+length(unique(to.plot$group))*10, 
-         height = length(unique(to.plot$pathway)))
+         height = length(unique(to.plot$pathway)),
+         limitsize = FALSE)
 } else{
   message("No significant terms plotted.")
 }
