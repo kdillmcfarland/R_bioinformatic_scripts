@@ -95,13 +95,14 @@ GSEA <- function(gene_list, gmt_file,
                   name = name[value == min.q],
                   .groups = "keep")
       
+      #Combine up/down results
       ga.result.format <- ups %>% 
-        filter(pathway %in% filter(gs.signif, name == "q.val.x")$pathway) %>% 
-        mutate(gage.FC = "up")
+        mutate(gage.FC = "up") %>% 
+        filter(pathway %in% filter(gs.signif, name == "q.val.x")$pathway)
       ga.result.format <- downs %>% 
+        mutate(gage.FC = "down") %>%
         filter(pathway %in% filter(gs.signif, name == "q.val.y")$pathway) %>% 
-        bind_rows(ga.result.format) %>% 
-        mutate(gage.FC = ifelse(is.na(gage.FC), "down", gage.FC))
+        bind_rows(ga.result.format)
       
       #### Combine results ####
       gsea.result <- fg.result %>% 
