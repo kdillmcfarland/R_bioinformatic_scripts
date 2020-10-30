@@ -186,7 +186,7 @@ run.enrich <- function(to.enrich, group.level,
       dplyr::summarize(ENTREZIDs = paste(ENTREZID, collapse="/"),
              SYMBOLs = paste(SYMBOL, collapse="/"),
              ENSEMBLIDs = paste(ENSEMBL, collapse="/"),
-             .groups="remove") %>% 
+             .groups="drop") %>% 
       #Extract values from ratios
       separate(BgRatio, into=c("size.term","size.category"), sep="/") %>% 
       separate(GeneRatio, into=c("size.overlap.term",
