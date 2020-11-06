@@ -118,9 +118,25 @@ run.enrich <- function(to.enrich, group.level,
   #Get database of interest
   if(genome$packageName == "org.Hs.eg.db"){
     
+    #No subcategory
     if(is.null(subcategory)){
       db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
                                           category = category))
+    } else
+    # Combine all CP subs
+    if(subcategory == "CP"){
+      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
+                                          category = "C2",
+                                          subcategory = "CP:BIOCARTA")) %>% 
+        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                        category = "C2",
+                                        subcategory = "CP:KEGG"))) %>% 
+        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                        category = "C2",
+                                        subcategory = "CP:PID"))) %>% 
+        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                        category = "C2",
+                                        subcategory = "CP:REACTOME")))
     } else {
       db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
                                           category = category,
