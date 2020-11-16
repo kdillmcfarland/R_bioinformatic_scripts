@@ -84,7 +84,7 @@ enrich.fxn <- function(gene.list=NULL,
   } else{ 
     output.name <- paste(basename, category, gsub(":", ".", subcategory),
                          sep="_") 
-    filename <- paste(outdir,
+    filename <- paste(outdir, "enrich_",
                       output.name, ".csv", sep="")
   }
   
