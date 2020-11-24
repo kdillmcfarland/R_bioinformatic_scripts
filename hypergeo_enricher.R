@@ -137,7 +137,19 @@ run.enrich <- function(to.enrich, group.level,
         bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
                                         category = "C2",
                                         subcategory = "CP:REACTOME")))
-    } else {
+    } else
+      # Combine all GO subs
+      if(subcategory == "GO"){
+        db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
+                                            category = "C5",
+                                            subcategory = "GO:MF")) %>% 
+          bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                          category = "C5",
+                                          subcategory = "GO:BP"))) %>% 
+          bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                          category = "C5",
+                                          subcategory = "GO:CC")))
+      } else {
       db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
                                           category = category,
                                           subcategory = subcategory))}
