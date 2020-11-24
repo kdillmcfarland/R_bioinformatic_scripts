@@ -138,7 +138,7 @@ GSEA <- function(gene_list, gmt_file,
   } else{
     filename <- paste(outdir, obj.name, ".csv", sep="")
   }
-  write_csv(all.results.df, path = filename)
+  write_csv(all.results.df, file = filename)
   
   #### Plot ####
   if(plot){
