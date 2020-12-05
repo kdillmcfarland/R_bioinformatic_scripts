@@ -24,6 +24,7 @@ REQUIRED
   gmt_ls = list object with gene ontology data
 
 OPTIONAL
+  nperm = number of permutations for P-value calculations. Default is 1000
   name = character to add to output file names. Default NULL
   outdir = Output directory. Default 'results/GSEA/'
   plot = logical if should produce a plot of enrichment sources. Default FALSE
@@ -34,7 +35,7 @@ OPTIONAL
 
 #################
 
-GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, 
+GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
                  name=NULL, outdir="results/GSEA/",
                  plot=FALSE, plot.fdr=0.05, plotdir='figs/GSEA/'){
   #### Setup ####
@@ -79,7 +80,7 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL,
       #Run GSEA with fgsea
       fg.result <- fgsea::fgseaSimple(pathways = myGO, 
                                 stats = genes.temp,
-                                nperm=1000,
+                                nperm=nperm,
                                 #eps=0,
                                 scoreType=scoreType) %>% 
         as.data.frame()
