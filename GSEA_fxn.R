@@ -20,6 +20,8 @@ Input parameters:
 REQUIRED
   gene_list = named list object with named numeric vectors of gene symbols and logFC
   gmt_file = character giving full path the gene ontology GMT file
+  or
+  gmt_ls = list object with gene ontology data
 
 OPTIONAL
   name = character to add to output file names. Default NULL
@@ -32,7 +34,7 @@ OPTIONAL
 
 #################
 
-GSEA <- function(gene_list, gmt_file, 
+GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, 
                  name=NULL, outdir="results/GSEA/",
                  plot=FALSE, plot.fdr=0.05, plotdir='figs/GSEA/'){
   #### Setup ####
@@ -45,7 +47,13 @@ GSEA <- function(gene_list, gmt_file,
   
   #### Data ####
   #Load gene ontology
-  myGO <- fgsea::gmtPathways(gmt_file)
+  if(!is.null(gmt_file)){
+    myGO <- fgsea::gmtPathways(gmt_file)
+  } else if(!is.null(gmt_ls)){
+    myGO <- gmt_ls
+  } else {
+    stop("Please provide gene ontology data as file for list object.")
+  }
   
   #### Loop ####
   #Loop through each list in the gene_list object
@@ -128,8 +136,13 @@ GSEA <- function(gene_list, gmt_file,
   all.results.df <- do.call(rbind.data.frame, all.results)
   rownames(all.results.df) <- NULL
   
+  if(!is.null(gmt_file)){
   GO.name <- strsplit(basename(gmt_file), split="[.]")
   obj.name <- paste(GO.name[[1]][[1]], "GSEA.result", sep="_")
+  } else {
+    obj.name <- "GSEA.result"
+  }
+  
   assign(obj.name, all.results.df, envir = .GlobalEnv)
   
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
