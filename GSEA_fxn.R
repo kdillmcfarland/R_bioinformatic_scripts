@@ -164,8 +164,12 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
       to.plot <- all.results.df %>% 
         filter(fgsea.FDR <= plot.fdr)
     } else {
-      terms.to.plot <- c()
-      for(i in c(1:length(plot.groups))){
+      #First group
+      terms.to.plot <- all.results.df %>% 
+        filter(fgsea.FDR <= plot.fdr & group %in% plot.groups[[1]]) %>% 
+        distinct(pathway) %>% unlist(use.names=FALSE)
+      #Remaining groups
+      for(i in c(2:length(plot.groups))){
         terms.temp <- all.results.df %>% 
           filter(fgsea.FDR <= plot.fdr & group %in% plot.groups[[i]]) %>% 
           distinct(pathway) %>% unlist(use.names=FALSE)
