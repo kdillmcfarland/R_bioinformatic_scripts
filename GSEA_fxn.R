@@ -224,8 +224,8 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
     plotname <- paste(plotdir, obj.name, ".pdf", sep="")
   }
   ggsave(plotname, plot, 
-         width = 8+length(unique(to.plot$group))*8, 
-         height = length(unique(to.plot$pathway)),
+         width = 3+length(unique(to.plot$group))*3, 
+         height = length(unique(to.plot$pathway))/2,
          limitsize = FALSE)
 } else{
   message("No significant terms plotted.")
