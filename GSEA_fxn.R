@@ -29,6 +29,7 @@ OPTIONAL
   outdir = Output directory. Default 'results/GSEA/'
   plot = logical if should produce a plot of enrichment sources. Default FALSE
   plot.fdr = Significance cutoff for terms to include in plot. Default 0.05
+  plot.groups = List of groups in which to apply FDR cutoff
   plotdir = Output directory for plot. Default the same as outdir except
             in 'figs' instead of 'results'
 "
@@ -37,7 +38,8 @@ OPTIONAL
 
 GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
                  name=NULL, outdir="results/GSEA/",
-                 plot=FALSE, plot.fdr=0.05, plotdir='figs/GSEA/'){
+                 plot=FALSE, plot.fdr=0.05, plot.groups=NULL,
+                 plotdir='figs/GSEA/'){
   #### Setup ####
   require(tidyverse)
   require(fgsea)
@@ -157,9 +159,23 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
   
   #### Plot ####
   if(plot){
-  #Filter to significant results
-  to.plot <- all.results.df %>% 
-    filter(fgsea.FDR <= plot.fdr)
+    #Filter to significant results
+    if(is.null(plot.groups)){
+      to.plot <- all.results.df %>% 
+        filter(fgsea.FDR <= plot.fdr)
+    } else {
+      terms.to.plot <- c()
+      for(i in c(1:length(plot.groups))){
+        terms.temp <- all.results.df %>% 
+          filter(fgsea.FDR <= plot.fdr & group %in% plot.groups[[i]]) %>% 
+          distinct(pathway) %>% unlist(use.names=FALSE)
+        
+        terms.to.plot <- intersect(terms.to.plot, terms.temp)
+      }
+      to.plot <- all.results.df %>% 
+        filter(pathway %in% terms.to.plot)
+    }
+  
   
   if(nrow(to.plot > 0)){
   plot.dat <- all.results.df %>% 
