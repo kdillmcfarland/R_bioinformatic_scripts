@@ -123,9 +123,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
     #Collapse duplicate STRING ID
     map.unique <- map %>% 
       group_by(STRING_id) %>% 
-      summarise(gene = paste(unique(gene), collapse = " / ")) %>% 
-      #Dummy color group
-      mutate(none=1)
+      summarise(gene = paste(unique(gene), collapse = " / "), .groups="drop")
   }
  
   #### Network ####
@@ -150,14 +148,14 @@ string.plot <- function(genes, version="11", score_threshold=400,
   }
 
   #### Set color values ####
-  if(is.null(colors)){
-    color.vec <- c(hue_pal()(ncol(map.arrange)-4), "grey70")
-  } else {
+  if(!is.null(colors)){
     color.vec <- colors
-  }
+  } else if(!is.null(enrichment)){
+    color.vec <- c(hue_pal()(ncol(map.arrange)-4), "grey70")
+  } 
   
   #### Plot ####
-  message("Plotting. PLEASE IGNORE attribute warning.")
+  message("\nPlotting. PLEASE IGNORE attribute warning.")
   #Get xy of nodes for manual layout
   xy <- layout_with_fr(subgraph)
   
@@ -167,18 +165,30 @@ string.plot <- function(genes, version="11", score_threshold=400,
   plot <- ggraph(subgraph, layout= "manual", x = V(subgraph)$x, y = V(subgraph)$y) +
     #Edges
     geom_edge_link(aes(width=combined_score), color="grey70") +
-    scale_edge_width(range = c(0.2,2), name="STRING score") +
-    #Nodes
-    geom_scatterpie(data=as_data_frame(subgraph, "vertices"),
-                    cols=sort(colnames(map.arrange)[-c(1:3)]), color=NA,
-                    pie_scale = 0.7) +
-    scale_fill_manual(values=color.vec,
-                      name="Enrichment") +
-    geom_nodetext(aes(x = V(subgraph)$x, y = V(subgraph)$y,
-                      label=V(subgraph)$symbol), size=2) +
-    theme_blank() + coord_fixed()
-  plot(plot)
+    scale_edge_width(range = c(0.2,2), name="STRING score") 
+  
+  #Add nodes
+  if(!is.null(enrichment)){
+    plot.col <- plot + 
+      geom_scatterpie(data=as_data_frame(subgraph, "vertices"),
+                      cols=sort(colnames(map.arrange)[-c(1:3)]), color=NA,
+                      pie_scale = 0.7) +
+      scale_fill_manual(values=color.vec, name="Enrichment") +
+      geom_nodetext(aes(x = V(subgraph)$x, y = V(subgraph)$y,
+                        label=V(subgraph)$symbol), size=2) +
+      theme_blank() + coord_fixed()
+  } else{
+    plot.col <- plot + 
+      geom_nodes(aes(x = V(subgraph)$x, y = V(subgraph)$y,
+                     fill=NULL), size = 5, color="grey70") +
+      geom_nodetext(aes(x = V(subgraph)$x, y = V(subgraph)$y,
+                          label=V(subgraph)$symbol), size=2) +
+      theme_blank() + coord_fixed()
+  }
+  
+  plot(plot.col)
+  
   #### Save ####
   filename <- paste(outdir,basename,"STRING.network.pdf", sep="")
-  ggsave(filename, plot, height=height, width=width)
+  ggsave(filename, plot.col, height=height, width=width)
 }
