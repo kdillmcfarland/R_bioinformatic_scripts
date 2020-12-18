@@ -1,4 +1,4 @@
-"Create STRING network of for gene list
+"Create STRING network of gene list
 
 #################
 
