@@ -44,9 +44,12 @@ clean.RNAseq <- function(
               "sample_id", "c_dna_sample_id","library_sample_id"),
   summ.cols=c("lib_id", 
               "fastq_total_reads", "total_reads",
-              "total_sequences", "total_counts", "median_cv_coverage",
-              "mapped_reads_w_dups", "predicted_sex")
-                     ){
+              "total_sequences", "total_counts", 
+              "pf_reads", "pf_reads_aligned",
+              "pct_pf_reads","pct_pf_reads_aligned",
+              "median_cv_coverage",
+              "mapped_reads_w_dups", "predicted_sex")                
+               ){
   require(tidyverse)
   require(stringr)
   require(lubridate)
