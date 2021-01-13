@@ -40,7 +40,7 @@ clean.RNAseq <- function(
   data.dir=NULL,
   #Default lists of column names
   anno.cols=c("proj_sub_1", "donor_id", 
-              "study_group", "collection_date", "date_collection",
+              "study_group", "collection_date", "date_collected",
               "sample_id", "c_dna_sample_id","library_sample_id"),
   summ.cols=c("lib_id", 
               "fastq_total_reads", "total_reads",
