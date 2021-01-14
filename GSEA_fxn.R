@@ -39,7 +39,7 @@ OPTIONAL
 GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
                  name=NULL, outdir="results/GSEA/",
                  plot=FALSE, plot.fdr=0.05, plot.groups=NULL,
-                 plotdir='figs/GSEA/'){
+                 plotdir='figs/GSEA/', height=5, width=5){
   #### Setup ####
   require(tidyverse)
   require(fgsea)
@@ -224,8 +224,8 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
     plotname <- paste(plotdir, obj.name, ".pdf", sep="")
   }
   ggsave(plotname, plot, 
-         width = 3+length(unique(to.plot$group))*3, 
-         height = length(unique(to.plot$pathway))/2,
+         width = width, 
+         height = height,
          limitsize = FALSE)
 } else{
   message("No significant terms plotted.")
