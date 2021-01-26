@@ -108,11 +108,11 @@ corr.P <- as.data.frame(corr.result$P) %>%
 
   as.data.frame(corr.R) %>% 
     rownames_to_column("variable") %>% 
-    write_csv(path=paste("results/correlation/", "R_", base.filename, sep=""))
+    write_csv(file=paste("results/correlation/", "R_", base.filename, sep=""))
 
   as.data.frame(corr.P) %>% 
     rownames_to_column("variable") %>% 
-    write_csv(path=paste("results/correlation/", "P_", base.filename, sep=""))
+    write_csv(file=paste("results/correlation/", "P_", base.filename, sep=""))
   
 ##### Plots #####
   if(heatmap){
