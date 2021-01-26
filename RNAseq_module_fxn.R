@@ -152,10 +152,10 @@ make.modules <- function(voom.dat,
     #Calculate mean by module
     group_by(module.char) %>% 
     summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
-    
+    rownames_to_column() %>% 
     #Add basename to module names
-    mutate(module.char=paste("module", basename, module.char, sep="_")) %>% 
-    column_to_rownames("module.char")
+    mutate(rowname=paste("module", basename, module.char, sep="_")) %>% 
+    column_to_rownames()
   
   ##### Save results to environ #####
   assign("sft.select", sft.select[1,], envir = .GlobalEnv)
