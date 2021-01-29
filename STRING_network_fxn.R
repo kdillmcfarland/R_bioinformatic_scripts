@@ -132,6 +132,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   
   # Arrange metadata as in network
   map.arrange <- map.unique %>% 
+    filter(STRING_id %in% vertex_attr(subgraph)$name) %>% 
     arrange(match(STRING_id, c(vertex_attr(subgraph)$name)))
   
   # Set attributes
