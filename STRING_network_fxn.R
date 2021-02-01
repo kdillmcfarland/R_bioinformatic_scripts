@@ -43,6 +43,7 @@ Saving plot
 
 #################
 string.plot <- function(genes, version="11", score_threshold=400,
+                        layout='fr',
                         enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
                         colors=NULL, outdir=NULL, basename=NULL,
