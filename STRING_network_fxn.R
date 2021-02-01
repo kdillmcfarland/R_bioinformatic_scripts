@@ -23,7 +23,9 @@ REQUIRED
   version = Character for STRING database version. Default is '11'
   score_threshold = Numeric for minimum combined score to include. Default is
                     400 which is considered medium confidence
-  
+  layout = layout type of network. One of Fruchterman-Reingold 'fr', bipartite 'bipar',
+           star, tree, circle, Kamada-Kawai 'kk', graphopt, gem, Davidson-Harel 'dh',
+           sphere, grid, large 'lgl', mds, Sugiyama 'sugi' Default is Fruchterman-Reingold
 OPTIONAL
 Coloring by enrichment terms
   enrichment = Matrix/data frame output by hypergeo_enricher function. Necessary
@@ -158,8 +160,22 @@ string.plot <- function(genes, version="11", score_threshold=400,
   #### Plot ####
   message("\nPlotting. PLEASE IGNORE attribute warning.")
   #Get xy of nodes for manual layout
-  xy <- layout_with_fr(subgraph)
-  
+  ##set layout
+  if(layout == "fr"){ xy <- layout_with_fr(subgraph) } else
+    if(layout == "bipar"){ xy <- layout_as_bipartite(subgraph) } else
+      if(layout == "star"){ xy <- layout_as_star(subgraph) } else
+        if(layout == "tree"){ xy <- layout_as_tree(subgraph) } else
+          if(layout == "circle"){ xy <- layout_in_circle(subgraph) } else
+            if(layout == "kk"){ xy <- layout_with_kk(subgraph) } else
+              if(layout == "graphopt"){ xy <- layout_with_graphopt(subgraph) } else
+                if(layout == "gem"){ xy <- layout_with_gem(subgraph) } else
+                  if(layout == "dh"){ xy <- layout_with_dh(subgraph) } else
+                    if(layout == "sphere"){ xy <- layout_on_sphere(subgraph) } else
+                      if(layout == "grid"){ xy <- layout_on_grid(subgraph) } else
+                        if(layout == "lgl"){ xy <- layout_with_lgl(subgraph) } else
+                          if(layout == "mds"){ xy <- layout_with_mds(subgraph) } else
+                            if(layout == "sugi"){ xy <- layout_with_sugiyama(subgraph) }
+
   V(subgraph)$x <- xy[, 1]
   V(subgraph)$y <- xy[, 2]
   
