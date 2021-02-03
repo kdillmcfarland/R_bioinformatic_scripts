@@ -155,7 +155,13 @@ string.plot <- function(genes, version="11", score_threshold=400,
   if(!is.null(colors)){
     color.vec <- colors
   } else if(!is.null(enrichment)){
-    color.vec <- c(hue_pal()(ncol(map.arrange)-4), "grey70")
+    #ggplot colors for sets in plot
+    color <- hue_pal()(length(unique(enrichment$Description)))
+    #Replace none with grey
+    index <- sort(c(unique(enrichment$Description), "none"))
+    index <- match("none", index)
+    color.vec <- c(color[1:index-1], "grey70",
+                   color[index:length(color)])
   } 
   
   #### Plot ####
