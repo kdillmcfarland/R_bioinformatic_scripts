@@ -29,7 +29,11 @@ REQUIRED
 OPTIONAL
 Coloring by enrichment terms
   enrichment = Matrix/data frame output by hypergeo_enricher function. Necessary
-               columns are Description, size.overlap.term, p.adjust, and 
+               columns are Description, size.overlap.term, p.adjust, and IDs (see below)
+  discard = Character vector listing groups of nodes to remove from network. Can be 
+            'edge.keep.enrich' to remove nodes without any edge connections but keep
+            unconnected nodes with enrichment or 'edge' to remove nodes without edges
+            regardless of enrichment.
   ID = Character for ID type of gene list. One of c('SYMBOLs','ENTREZIDs','ENSEMBLIDs')
   size.overlap.term = Gene overlap minimum for enrichment terms to include in plot.
                       Default is 2 
@@ -45,6 +49,7 @@ Saving plot
 string.plot <- function(genes, version="11", score_threshold=400,
                         layout='fr',
                         enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
+                        discard=NULL,
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
                         colors=NULL, outdir=NULL, basename=NULL,
                         width=10, height=10
@@ -133,22 +138,43 @@ string.plot <- function(genes, version="11", score_threshold=400,
   # Create igraph object 
   subgraph <- string_db$get_subnetwork(map.unique$STRING_id)
   
+  #Discard unconnected and uncolored if specified
+  ##All nodes
+  nodes <- which(degree(subgraph)>=0)
+  ##Nodes without edge connections
+  isolated <- which(degree(subgraph)==0)
+  ##Nodes without enrichment
+  unenrich <- map.unique %>% 
+    dplyr::filter(none==1) %>% 
+    distinct(STRING_id) %>% unlist(use.names = FALSE)
+
+  ##Remove unconnected regardless of enrichment
+  if(discard == "edge"){
+    subgraph.filter <- delete.vertices(subgraph, isolated)
+  } else if(discard == "edge.keep.enrich"){
+  ##Remove unconnected that are also unenriched
+    isolated.unenrich <- isolated[names(isolated) %in% unenrich]
+    subgraph.filter <- delete.vertices(subgraph, isolated.unenrich)
+  } else {
+    subgraph.filter <- subgraph
+  }
+  
   # Arrange metadata as in network
   map.arrange <- map.unique %>% 
-    dplyr::filter(STRING_id %in% vertex_attr(subgraph)$name) %>% 
-    arrange(match(STRING_id, c(vertex_attr(subgraph)$name)))
-  
+    dplyr::filter(STRING_id %in% vertex_attr(subgraph.filter)$name) %>% 
+    arrange(match(STRING_id, c(vertex_attr(subgraph.filter)$name)))
+
   # Set attributes
   ## Check order first
-  if(!identical(vertex_attr(subgraph)$name, map.arrange$STRING_id)){
+  if(!identical(vertex_attr(subgraph.filter)$name, map.arrange$STRING_id)){
     stop("igraph gene order does not match color information.")
   }
   
   ##gene names
-  V(subgraph)$symbol <- map.arrange$gene
+  V(subgraph.filter)$symbol <- map.arrange$gene
   ##enrichment colors
   for(term in colnames(map.arrange)[-c(1:3)]){
-    vertex_attr(subgraph)[[term]] <- unlist(map.arrange[term])
+    vertex_attr(subgraph.filter)[[term]] <- unlist(map.arrange[term])
   }
 
   #### Set color values ####
@@ -168,25 +194,26 @@ string.plot <- function(genes, version="11", score_threshold=400,
   message("\nPlotting. PLEASE IGNORE attribute warning.")
   #Get xy of nodes for manual layout
   ##set layout
-  if(layout == "fr"){ xy <- layout_with_fr(subgraph) } else
-    if(layout == "bipar"){ xy <- layout_as_bipartite(subgraph) } else
-      if(layout == "star"){ xy <- layout_as_star(subgraph) } else
-        if(layout == "tree"){ xy <- layout_as_tree(subgraph) } else
-          if(layout == "circle"){ xy <- layout_in_circle(subgraph) } else
-            if(layout == "kk"){ xy <- layout_with_kk(subgraph) } else
-              if(layout == "graphopt"){ xy <- layout_with_graphopt(subgraph) } else
-                if(layout == "gem"){ xy <- layout_with_gem(subgraph) } else
-                  if(layout == "dh"){ xy <- layout_with_dh(subgraph) } else
-                    if(layout == "sphere"){ xy <- layout_on_sphere(subgraph) } else
-                      if(layout == "grid"){ xy <- layout_on_grid(subgraph) } else
-                        if(layout == "lgl"){ xy <- layout_with_lgl(subgraph) } else
-                          if(layout == "mds"){ xy <- layout_with_mds(subgraph) } else
-                            if(layout == "sugi"){ xy <- layout_with_sugiyama(subgraph) }
+  if(layout == "fr"){ xy <- layout_with_fr(subgraph.filter) } else
+    if(layout == "bipar"){ xy <- layout_as_bipartite(subgraph.filter) } else
+      if(layout == "star"){ xy <- layout_as_star(subgraph.filter) } else
+        if(layout == "tree"){ xy <- layout_as_tree(subgraph.filter) } else
+          if(layout == "circle"){ xy <- layout_in_circle(subgraph.filter) } else
+            if(layout == "kk"){ xy <- layout_with_kk(subgraph.filter) } else
+              if(layout == "graphopt"){ xy <- layout_with_graphopt(subgraph.filter) } else
+                if(layout == "gem"){ xy <- layout_with_gem(subgraph.filter) } else
+                  if(layout == "dh"){ xy <- layout_with_dh(subgraph.filter) } else
+                    if(layout == "sphere"){ xy <- layout_on_sphere(subgraph.filter) } else
+                      if(layout == "grid"){ xy <- layout_on_grid(subgraph.filter) } else
+                        if(layout == "lgl"){ xy <- layout_with_lgl(subgraph.filter) } else
+                          if(layout == "mds"){ xy <- layout_with_mds(subgraph.filter) } else
+                            if(layout == "sugi"){ xy <- layout_with_sugiyama(subgraph.filter) }
 
-  V(subgraph)$x <- xy[, 1]
-  V(subgraph)$y <- xy[, 2]
+  V(subgraph.filter)$x <- xy[, 1]
+  V(subgraph.filter)$y <- xy[, 2]
   
-  plot <- ggraph(subgraph, layout= "manual", x = V(subgraph)$x, y = V(subgraph)$y) +
+  plot <- ggraph(subgraph.filter, layout= "manual", 
+                 x = V(subgraph.filter)$x, y = V(subgraph.filter)$y) +
     #Edges
     geom_edge_link(aes(width=combined_score), color="grey70") +
     scale_edge_width(range = c(0.2,2), name="STRING score") 
@@ -194,19 +221,19 @@ string.plot <- function(genes, version="11", score_threshold=400,
   #Add nodes
   if(!is.null(enrichment)){
     plot.col <- plot + 
-      geom_scatterpie(data=as_data_frame(subgraph, "vertices"),
+      geom_scatterpie(data=as_data_frame(subgraph.filter, "vertices"),
                       cols=sort(colnames(map.arrange)[-c(1:3)]), color=NA,
                       pie_scale = 0.7) +
       scale_fill_manual(values=color.vec, name="Enrichment") +
-      geom_nodetext(aes(x = V(subgraph)$x, y = V(subgraph)$y,
-                        label=V(subgraph)$symbol), size=2) +
+      geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
+                        label=V(subgraph.filter)$symbol), size=2) +
       theme_blank() + coord_fixed()
   } else{
     plot.col <- plot + 
-      geom_nodes(aes(x = V(subgraph)$x, y = V(subgraph)$y,
+      geom_nodes(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
                      fill=NULL), size = 5, color="grey70") +
-      geom_nodetext(aes(x = V(subgraph)$x, y = V(subgraph)$y,
-                          label=V(subgraph)$symbol), size=2) +
+      geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
+                          label=V(subgraph.filter)$symbol), size=2) +
       theme_blank() + coord_fixed()
   }
   
