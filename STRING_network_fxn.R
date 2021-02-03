@@ -82,7 +82,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
     col.mat <- enrichment %>% 
       dplyr::select(Description, size.overlap.term, p.adjust,
                     all_of(ID)) %>% 
-      filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust)
+      dplyr::filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust)
       
     #Error if no terms to plot
     if(nrow(col.mat)==0) {stop("No significant enrichment terms. 
@@ -91,42 +91,42 @@ string.plot <- function(genes, version="11", score_threshold=400,
     #Format enrichment results for scatterpie plotting
     col.mat.format <- col.mat %>% 
       #Split gene lists within terms
-      mutate(gene = strsplit(as.character(get(ID)), "/")) %>% 
-      unnest(gene) %>%
+      dplyr::mutate(gene = strsplit(as.character(get(ID)), "/")) %>% 
+      tidyr::unnest(gene) %>%
       #spread terms to columns
       distinct(gene, Description) %>% 
-      mutate(value=1) %>% 
+      dplyr::mutate(value=1) %>% 
       #Add string ID
       left_join(map, by = "gene") %>% 
-      select(-gene) %>% 
-      distinct() %>% 
+      dplyr::select(-gene) %>% 
+      dplyr::distinct() %>% 
       #Calculate terms per ID
       group_by(STRING_id) %>% 
-      mutate(total = sum(value)) %>%
+      dplyr::mutate(total = sum(value)) %>%
       ungroup() %>% 
       #Calculate proportions within terms
       pivot_wider(names_from = Description, values_fill = 0) %>% 
-      mutate(across(-c(STRING_id,total), ~./total))
+      dplyr::mutate(across(-c(STRING_id,total), ~./total))
     
     #Add to STRING data and create dummy group for genes without enrichment
     map.unique <- map %>% 
       #collapse gene names
       group_by(STRING_id) %>% 
-      mutate(gene = paste(unique(gene), collapse=" / ")) %>% 
+      dplyr::mutate(gene = paste(unique(gene), collapse=" / ")) %>% 
       #add enrichment color info
       full_join(col.mat.format, by = "STRING_id") %>%
       distinct() %>% 
       #no enrichment group
-      mutate(none = ifelse(is.na(total),1,0)) %>% 
+      dplyr::mutate(none = ifelse(is.na(total),1,0)) %>% 
       ungroup() %>% 
       #fill in 0
-      mutate(across(everything(), ~replace_na(., 0)))
+      dplyr::mutate(across(everything(), ~replace_na(., 0)))
 
   } else {
     #Collapse duplicate STRING ID
     map.unique <- map %>% 
       group_by(STRING_id) %>% 
-      summarise(gene = paste(unique(gene), collapse = " / "), .groups="drop")
+      dplyr::summarise(gene = paste(unique(gene), collapse = " / "), .groups="drop")
   }
  
   #### Network ####
@@ -135,7 +135,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   
   # Arrange metadata as in network
   map.arrange <- map.unique %>% 
-    filter(STRING_id %in% vertex_attr(subgraph)$name) %>% 
+    dplyr::filter(STRING_id %in% vertex_attr(subgraph)$name) %>% 
     arrange(match(STRING_id, c(vertex_attr(subgraph)$name)))
   
   # Set attributes
