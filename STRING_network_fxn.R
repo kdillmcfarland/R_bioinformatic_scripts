@@ -143,15 +143,16 @@ string.plot <- function(genes, version="11", score_threshold=400,
   nodes <- which(degree(subgraph)>=0)
   ##Nodes without edge connections
   isolated <- which(degree(subgraph)==0)
-  ##Nodes without enrichment
-  unenrich <- map.unique %>% 
-    dplyr::filter(none==1) %>% 
-    distinct(STRING_id) %>% unlist(use.names = FALSE)
+  
 
   ##Remove unconnected regardless of enrichment
   if(discard == "edge"){
     subgraph.filter <- delete.vertices(subgraph, isolated)
   } else if(discard == "edge.keep.enrich"){
+    ##Nodes without enrichment
+    unenrich <- map.unique %>% 
+      dplyr::filter(none==1) %>% 
+      distinct(STRING_id) %>% unlist(use.names = FALSE)
   ##Remove unconnected that are also unenriched
     isolated.unenrich <- isolated[names(isolated) %in% unenrich]
     subgraph.filter <- delete.vertices(subgraph, isolated.unenrich)
