@@ -189,7 +189,9 @@ string.plot <- function(genes, version="11", score_threshold=400,
     index <- match("none", index)
     color.vec <- c(color[1:index-1], "grey70",
                    color[index:length(color)])
-  } 
+  } else if (is.null(enrichment) & is.null(colors)){
+    color.vec <- "#d9d9d9"
+  }
   
   #### Plot ####
   message("\nPlotting. PLEASE IGNORE attribute warning.")
@@ -232,7 +234,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   } else{
     plot.col <- plot + 
       geom_nodes(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
-                     fill=NULL), size = 5, color="grey70") +
+                     fill=NULL), size = 5, color=color.vec) +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
                           label=V(subgraph.filter)$symbol), size=2) +
       theme_blank() + coord_fixed()
