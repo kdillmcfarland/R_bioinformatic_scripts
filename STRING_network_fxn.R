@@ -33,7 +33,7 @@ Coloring by enrichment terms
   discard = Character vector listing groups of nodes to remove from network. Can be 
             'edge.keep.enrich' to remove nodes without any edge connections but keep
             unconnected nodes with enrichment or 'edge' to remove nodes without edges
-            regardless of enrichment.
+            regardless of enrichment. Default is 'none'
   ID = Character for ID type of gene list. One of c('SYMBOLs','ENTREZIDs','ENSEMBLIDs')
   size.overlap.term = Gene overlap minimum for enrichment terms to include in plot.
                       Default is 2 
@@ -49,7 +49,7 @@ Saving plot
 string.plot <- function(genes, version="11", score_threshold=400,
                         layout='fr',
                         enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
-                        discard=NULL,
+                        discard="none",
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
                         colors=NULL, outdir=NULL, basename=NULL,
                         width=10, height=10
@@ -156,7 +156,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   ##Remove unconnected that are also unenriched
     isolated.unenrich <- isolated[names(isolated) %in% unenrich]
     subgraph.filter <- delete.vertices(subgraph, isolated.unenrich)
-  } else {
+  } else if(discard == "none") {
     subgraph.filter <- subgraph
   }
   
