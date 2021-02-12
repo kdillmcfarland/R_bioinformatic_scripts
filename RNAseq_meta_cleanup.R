@@ -144,18 +144,18 @@ RNAseq.meta.clean <- function(data.dir=NULL,
       #Recode data types (f)
       separate(i, into=c("i"), sep="[(]", extra="drop") %>% 
       mutate(i = fct_recode(factor(i),
-                            to.be.aligned="in total ",
-                            secondary.align="secondary",
-                            chimeric.align="supplementary",
-                            PCR.dups="duplicates",
-                            align="mapped ",
-                            paired="paired in sequencing",
-                            R1.paired="read1", R2.paired="read2",
-                            align.paired="properly paired ",
-                            both.align.paired= "with itself and mate mapped",
-                            one.align.paired="singletons " ,
-                            both.align.paired.diffCHR="with mate mapped to a different chr",
-                            both.align.paired.diffCHR.mapq="with mate mapped to a different chr ")) %>% 
+                            filtered.to.be.aligned="in total ",
+                            filtered.secondary.align="secondary",
+                            filtered.chimeric.align="supplementary",
+                            filtered.PCR.dups="duplicates",
+                            filtered.align="mapped ",
+                            filtered.paired="paired in sequencing",
+                            filtered.R1.paired="read1", R2.paired="read2",
+                            filtered.align.paired="properly paired ",
+                            filtered.both.align.paired= "with itself and mate mapped",
+                            filtered.one.align.paired="singletons " ,
+                            filtered.both.align.paired.diffCHR="with mate mapped to a different chr",
+                            filtered.both.align.paired.diffCHR.mapq="with mate mapped to a different chr ")) %>% 
       pivot_wider(names_from = "i", values_from = "h") %>% 
       mutate_at(vars(-libID), as.numeric)
     
