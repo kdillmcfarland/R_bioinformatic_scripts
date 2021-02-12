@@ -23,7 +23,8 @@ RNAseq.meta.clean <- function(data.dir=NULL,
       libID.temp <- basename(file) %>% 
         gsub(".settings", "", .)
       
-      trim.summ.temp <- read_table(file, col_names = FALSE) %>% 
+      trim.summ.temp <- read_table(file, col_names = FALSE,
+                                   col_types = cols()) %>% 
         filter(startsWith(X1, 'Total number of read pairs') |
                  startsWith(X1, 'Number of retained reads')) %>% 
         separate(X1, into=c("metric","value"), sep=": ") %>% 
@@ -47,12 +48,14 @@ RNAseq.meta.clean <- function(data.dir=NULL,
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
     
-    align.lib <- read_tsv(align.file, col_names = FALSE) %>% 
+    align.lib <- read_tsv(align.file, col_names = FALSE,
+                          col_types = cols()) %>% 
       filter(grepl("bam",X1)) %>% 
       distinct(X1)
       
     # Align summary
-    align.summ <- read_tsv(align.file, col_names = FALSE) %>% 
+    align.summ <- read_tsv(align.file, col_names = FALSE,
+                           col_types = cols()) %>% 
       #Get sample name from filename
       mutate(libID = factor(X1, levels=align.lib$X1),
              libID = basename(as.character(libID)),
@@ -93,7 +96,8 @@ RNAseq.meta.clean <- function(data.dir=NULL,
       separate(X1, into=as.character(c(1:30)), sep="\t") %>% 
       unlist(use.names = FALSE)
     
-    bam.summ <- read_delim(bam1, delim = " ", col_names=FALSE, comment = "#") %>%
+    bam.summ <- read_delim(bam1, delim = " ", col_names=FALSE, comment = "#",
+                           col_types = cols()) %>%
       #Get sample name from file name
       mutate(libID = factor(X1, levels=align.lib$X1),
              libID = basename(as.character(libID)),
@@ -121,12 +125,14 @@ RNAseq.meta.clean <- function(data.dir=NULL,
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
     
-    align.lib2 <- read_tsv(align.file2, col_names = FALSE) %>% 
+    align.lib2 <- read_tsv(align.file2, col_names = FALSE,
+                           col_types = cols()) %>% 
       filter(grepl("bam",X1)) %>% 
       distinct(X1)
     
     # Align summary
-    align.summ2 <- read_tsv(align.file2, col_names = FALSE) %>% 
+    align.summ2 <- read_tsv(align.file2, col_names = FALSE,
+                            col_types = cols()) %>% 
       #Get sample name from filename
       mutate(libID = factor(X1, levels=align.lib2$X1),
              libID = basename(as.character(libID)),
@@ -163,9 +169,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
     
-    count.lib <- read_tsv(count.file)
-    
-    count.summ <- read_tsv(count.file) %>% 
+    count.summ <- read_tsv(count.file, col_types = cols()) %>% 
       pivot_longer(-Status) %>% 
       #Get sample names from file
       mutate(libID = basename(name),
@@ -183,6 +187,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
   #### Save ####
   #remove columns that are all blank or 0
   summ.all.filter <- summ.all %>%
+    drop_na(libID) %>% 
     mutate_at(vars(-libID), as.numeric) %>% 
     select_if(~sum(!is.na(.)) > 0) %>% 
     select_if(~sum(.!= 0) > 0)
