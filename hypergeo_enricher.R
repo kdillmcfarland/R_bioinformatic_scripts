@@ -149,7 +149,25 @@ run.enrich <- function(to.enrich, group.level,
           bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
                                           category = "C5",
                                           subcategory = "GO:CC")))
-      } else {
+      } else if(subcategory=="GO:MF"){
+        db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
+                                            category = "C5",
+                                            subcategory = "GO:MF"))
+    } else if(subcategory=="GO:BP"){
+      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
+                                          category = "C5",
+                                          subcategory = "GO:BP"))
+    } else if(subcategory=="GO:CC"){
+      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
+                                          category = "C5",
+                                          subcategory = "GO:CC")) %>% 
+        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                        category = "C5",
+                                        subcategory = "GO:BP"))) %>% 
+        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
+                                        category = "C5",
+                                        subcategory = "GO:CC")))
+    } else {
       db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
                                           category = category,
                                           subcategory = subcategory))}
