@@ -202,7 +202,9 @@ run.enrich <- function(to.enrich, group.level,
     #Format category labels
     db.species.clean <- db.species %>% 
       dplyr::select(gs_cat, gs_subcat, gs_name) %>% 
-      dplyr::rename(category=gs_cat, subcategory=gs_subcat, Description=gs_name)
+      dplyr::rename(category=gs_cat, subcategory=gs_subcat, 
+                    Description=gs_name) %>% 
+      distinct()
     #Format results   
     enrich.result.clean <- enrich.result %>% 
       #Separate entrez ID lists
