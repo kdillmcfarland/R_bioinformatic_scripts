@@ -199,6 +199,10 @@ run.enrich <- function(to.enrich, group.level,
       pivot_names[[i]] <- paste("entrez", i, sep="")
     }
     
+    #Format category labels
+    db.species.clean <- db.species %>% 
+      dplyr::select(gs_cat, gs_subcat, gs_name) %>% 
+      dplyr::rename(category=gs_cat, subcategory=gs_subcat, Description=gs_name)
     #Format results   
     enrich.result.clean <- enrich.result %>% 
       #Separate entrez ID lists
@@ -227,9 +231,9 @@ run.enrich <- function(to.enrich, group.level,
       mutate("k/K"=size.overlap.term/size.term) %>% 
       
       #Add ID columns for database names
-      mutate(category=category, subcategory=subcategory,
-             #Add columns for group info
-             group=group.level, size.group = length(to.enrich)) %>% 
+      left_join(db.species.clean, by = "Description") %>% 
+      #Add columns for group info
+      mutate(group=group.level, size.group = length(to.enrich)) %>% 
       #Reorder variables
       dplyr::select(category, subcategory,
                     group, size.group, 
