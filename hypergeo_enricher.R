@@ -35,6 +35,7 @@ AND
                     'CP:KEGG' or 'GO:BP'
   
   ID.type = Character identifier type for genes in data. One of 'ENTREZ' or 'ENSEBML'
+  genome = Character for genome reference to use. One of 'org.Hs.eg.db', 'org.Mm.eg.db' currently allowed
 
 OPTIONAL
   basename = Character prefix for output file name
