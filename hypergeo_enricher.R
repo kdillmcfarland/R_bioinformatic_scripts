@@ -18,11 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Input parameters:
 REQUIRED
+ONE OF
   gene.list = List of named vectors as in data.ls['group 1'] = c('gene1','gene2',...) where
               enrichment is assessed separately for each group
   gene.df = data frame with groups in one column and gene IDs in another. Gene IDs must be in geneName
       df.group = Column name in gene.df containing groups to enrich within. Default is 'group'
-  
+
+AND
   category = Character name of Broad gene set to enrich in. One of 'H' or 'C1' through 'C8'
       subcategory = If using a subset of the above gene set. One of
                     'CP' - C2 canonical pathways including BIOCARTA, KEGG, PID, REACTOME
