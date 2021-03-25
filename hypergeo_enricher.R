@@ -1,3 +1,53 @@
+"Hypergeometric enrichment of genes in Broad gene sets
+
+#################
+
+Kim Dill-Mcfarland
+University of Washington, kadm@uw.edu
+Copyright (C) 2021 Kim Dill-Mcfarland
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Input parameters:
+REQUIRED
+  gene.list = List of named vectors as in data.ls['group 1'] = c('gene1','gene2',...) where
+              enrichment is assessed separately for each group
+  gene.df = data frame with groups in one column and gene IDs in another. Gene IDs must be in geneName
+      df.group = Column name in gene.df containing groups to enrich within. Default is 'group'
+  
+  category = Character name of Broad gene set to enrich in. One of 'H' or 'C1' through 'C8'
+      subcategory = If using a subset of the above gene set. One of
+                    'CP' - C2 canonical pathways including BIOCARTA, KEGG, PID, REACTOME
+                    'GO' - C5 gene ontology including molecular function (MF), biological process (BP),
+                           cellular component (CC)
+                    or
+                    Colon separated combination of the above with further subsetting as in 
+                    'CP:KEGG' or 'GO:BP'
+  
+  ID.type = Character identifier type for genes in data. One of 'ENTREZ' or 'ENSEBML'
+
+OPTIONAL
+  basename = Character prefix for output file name
+  outdir = File path to directory where output is saved. Default is 'results/enrichment/'
+   
+Example
+  enrich.fxn(gene.df=data.df,
+             df.group='module',
+             category='C5', subcategory='GO',
+             ID.type='ENTREZ',
+             genome='org.Hs.eg.db', 
+             basename='modules', 
+             outdir='results/enrichment/')
+"
+
 ##### Loop function #####
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
