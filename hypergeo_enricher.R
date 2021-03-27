@@ -64,9 +64,9 @@ enrich.fxn <- function(gene.list=NULL,
   require(msigdbr)
   require(tidyverse)
   require(plyr)
-  if(genome$packageName == "org.Hs.eg.db"){
+  if(genome== "org.Hs.eg.db"){
     require(org.Hs.eg.db)}
-  if(genome$packageName == "org.Mm.eg.db"){
+  if(genome== "org.Mm.eg.db"){
     require(org.Mm.eg.db)}
   
   #Silence warnings
@@ -78,8 +78,7 @@ enrich.fxn <- function(gene.list=NULL,
 ##### Loop through gene df #####
   if(!is.null(gene.df)){
     #List all possible group levels
-    group.list <- unique(gene.df[,df.group]) %>% 
-      dplyr::select(all_of(df.group)) %>% unlist(use.names = FALSE)
+    group.list <- unique(gene.df[,df.group])
     
     for(group.level in group.list){
       print(group.level)
@@ -169,7 +168,7 @@ run.enrich <- function(to.enrich, group.level,
   
 
   #Get database of interest
-  if(genome$packageName == "org.Hs.eg.db"){
+  if(genome == "org.Hs.eg.db"){
     
     #No subcategory
     if(is.null(subcategory)){
