@@ -118,10 +118,10 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
       
       #### Combine results ####
       gsea.result <- fg.result %>% 
-        dplyr::select(pathway, padj, ES, NES, size) %>% 
+        dplyr::select(pathway, padj, ES, NES, size, leadingEdge) %>% 
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
         dplyr::rename(fgsea.FDR = padj, fgsea.NES = NES, 
-               fgsea.ES=ES, fgsea.size=size) %>% 
+               fgsea.ES=ES, fgsea.size=size, fgsea.leadingEdge=leadingEdge) %>% 
         full_join(ga.result.format, by="pathway") %>% 
         dplyr::select(pathway:fgsea.FC, q.val, p.geomean,
                       stat.mean, set.size, gage.FC) %>% 
