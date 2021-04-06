@@ -122,13 +122,18 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
         dplyr::rename(fgsea.FDR = padj, fgsea.NES = NES, 
                fgsea.ES=ES, fgsea.size=size, fgsea.leadingEdge=leadingEdge) %>% 
+        #format leading edge list
+        unnest(cols = c(fgsea.leadingEdge)) %>% 
+        group_by(pathway,fgsea.FDR,fgsea.ES,fgsea.NES,fgsea.size,fgsea.FC) %>% 
+        summarise(fgsea.leadingEdge=paste(unique(fgsea.leadingEdge), collapse=";"),
+                  .groups="drop") %>% 
+        #add GAGE results
         full_join(ga.result.format, by="pathway") %>% 
-        dplyr::select(pathway:fgsea.FC, q.val, p.geomean,
+        dplyr::select(pathway:fgsea.leadingEdge, q.val, p.geomean,
                       stat.mean, set.size, gage.FC) %>% 
         dplyr::rename(gage.FDR = q.val, gage.geomean = p.geomean, 
                       gage.statmean = stat.mean,
-                      gage.size=set.size)  %>% 
-        mutate(group = genes)
+                      gage.size=set.size)  
       
       #### Save ####
       all.results[[genes]] <- gsea.result
