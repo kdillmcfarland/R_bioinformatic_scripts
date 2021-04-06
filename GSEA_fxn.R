@@ -141,9 +141,10 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
   
   #### Format output ####
   #Unlist results into 1 df
-  all.results.df <- do.call(rbind.data.frame, all.results)
-  rownames(all.results.df) <- NULL
-  
+  all.results.df <- do.call(rbind.data.frame, all.results) %>% 
+    rownames_to_column("group") %>% 
+    mutate(group = gsub("[.][0-9]{0,4}","",group))
+
   if(!is.null(gmt_file)){
   GO.name <- strsplit(basename(gmt_file), split="[.]")
   obj.name <- paste(GO.name[[1]][[1]], "GSEA.result", sep="_")
