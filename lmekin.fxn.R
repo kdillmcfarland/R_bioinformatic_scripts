@@ -88,7 +88,7 @@ if(!is.null(subset.var)){
     filter(get(subset.var) == subset.lvl)
   
   dat.subset$E <- as.data.frame(dat.subset$E) %>% 
-    select(rowname, all_of(dat.subset$targets$libID))
+    dplyr::select(rowname, all_of(dat.subset$targets$libID))
 }
 
 #Subset genes
