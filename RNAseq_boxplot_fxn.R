@@ -183,7 +183,7 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       
       #List levels of variable of interest
       var.levels.temp <- plot.dat.sub.fct %>% 
-        dplyr::selec(vars[j]) %>% 
+        dplyr::select(vars[j]) %>% 
         distinct() %>% 
         unlist(use.names = FALSE)
       
@@ -211,14 +211,14 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
                                   format = "e", digits = 4), sep="")
       } else{
         plot.dat.sub2 <- plot.dat.sub.fct %>% 
-          dplyr::selec(-group, -adj.P.Val) %>% 
+          dplyr::select(-group, -adj.P.Val) %>% 
           distinct()
         #Make plot title w/o FDR
         plot.title <- "Not in model"
       }
       
       plot1 <- plot.dat.sub2 %>% 
-        dplyr::selec(-group, -adj.P.Val) %>% 
+        dplyr::select(-group, -adj.P.Val) %>% 
         distinct() %>% 
         ggplot(aes_string(x=vars[j], y="voom.count")) +
         geom_boxplot(outlier.shape = NA) +
@@ -264,7 +264,7 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       #Else variable was not in model
       else{
         plot.dat.sub2 <- plot.dat.sub %>% 
-          dplyr::selec(-group, -adj.P.Val) %>% 
+          dplyr::select(-group, -adj.P.Val) %>% 
           distinct()
         #Make plot title w/o FDR
         plot.title <- "Not in model"
@@ -309,10 +309,10 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
   if(interaction){
     #List all interactions
     var.levels.temp <- plot.dat.sub %>% 
-      dplyr::selec(vars[1],vars[2]) %>% 
+      dplyr::select(vars[1],vars[2]) %>% 
       distinct() %>% 
       mutate(interaction = paste(get(vars[1]), get(vars[2]), sep=":")) %>% 
-      dplyr::selec(interaction) %>% 
+      dplyr::select(interaction) %>% 
       unlist(use.names = FALSE)
     
     var.levels.addtl <- c(paste(vars[1],vars[2],sep=":"),
@@ -329,7 +329,7 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
     if(any(var.levels.all %in% plot.dat.sub$group)){
       title.dat <- plot.dat.sub %>% 
         filter(group %in% var.levels.all) %>% 
-        dplyr::selec(group, adj.P.Val) %>% 
+        dplyr::select(group, adj.P.Val) %>% 
         distinct()
 
       plot.title <- paste(title.dat$group, "FDR =", 
@@ -339,12 +339,12 @@ foreach(i = 1:length(to_plot), .verbose = TRUE) %dopar% {
       
       plot.dat.sub2 <- plot.dat.sub %>% 
         filter(group %in% var.levels.all) %>% 
-        dplyr::selec(-adj.P.Val,-group) %>% 
+        dplyr::select(-adj.P.Val,-group) %>% 
         distinct()
       
     } else{
       plot.dat.sub2 <- plot.dat.sub %>% 
-        dplyr::selec(-adj.P.Val,-group) %>% 
+        dplyr::select(-adj.P.Val,-group) %>% 
         distinct()
       
       plot.title <- " "
