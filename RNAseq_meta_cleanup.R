@@ -44,7 +44,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
   
   #### Alignment ####
   if(align){
-    align.file <- list.files(data.dir, pattern="summary.alignment", 
+    align.file <- list.files(data.dir, pattern="summary.alignment|bam.summary", 
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
     
@@ -121,7 +121,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
   
   #### Filtered paired alignment ####
   if(bam.filter){
-    align.file2 <- list.files(data.dir, pattern="summary.align.filter", 
+    align.file2 <- list.files(data.dir, pattern="summary.align.filter|bam.filter.summary", 
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
     
