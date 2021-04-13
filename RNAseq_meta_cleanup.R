@@ -173,7 +173,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
       pivot_longer(-Status) %>% 
       #Get sample names from file
       mutate(libID = basename(name),
-             libID = gsub("_filter.paired.bam", "", libID)) %>% 
+             libID = gsub("_filter.paired.bam|_filter.bam", "", libID)) %>% 
       select(-name) %>% 
       #Keep rows with non-zero values
       filter(value !=0) %>% 
