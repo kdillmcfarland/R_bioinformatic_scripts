@@ -136,7 +136,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
       #Get sample name from filename
       mutate(libID = factor(X1, levels=align.lib2$X1),
              libID = basename(as.character(libID)),
-             libID = gsub("_filter_paired.bam", "", libID)) %>% 
+             libID = gsub("_filter_paired.bam|_filter.bam", "", libID)) %>% 
       fill(libID) %>% 
       #Separate data to column
       separate(X1, into=c("h","i"), sep=" \\+ 0 ", fill="right") %>% 
