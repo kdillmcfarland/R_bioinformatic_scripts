@@ -110,6 +110,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
       dplyr::mutate(total = sum(value)) %>%
       ungroup() %>% 
       #Calculate proportions within terms
+      arrange(match(Description,unique(enrichment$Description))) %>% 
       pivot_wider(names_from = Description, values_fill = 0) %>% 
       dplyr::mutate(across(-c(STRING_id,total), ~./total))
     
@@ -225,7 +226,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   if(!is.null(enrichment)){
     plot.col <- plot + 
       geom_scatterpie(data=as_data_frame(subgraph.filter, "vertices"),
-                      cols=sort(colnames(map.arrange)[-c(1:3)]), color=NA,
+                      cols=colnames(map.arrange)[-c(1:3)], color=NA,
                       pie_scale = 0.7) +
       scale_fill_manual(values=color.vec, name="Enrichment") +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
