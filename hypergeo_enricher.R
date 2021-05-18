@@ -34,7 +34,7 @@ AND
                     Colon separated combination of the above with further subsetting as in 
                     'CP:KEGG' or 'GO:BP'
   
-  ID.type = Character identifier type for genes in data. One of 'ENTREZ' or 'ENSEBML'
+  ID.type = Character identifier type for genes in data. One of 'ENTREZ' or 'ENSEBML' or 'SYMBOL'
   genome = Character for genome reference to use. One of 'org.Hs.eg.db', 'org.Mm.eg.db' currently allowed
 
 OPTIONAL
@@ -162,8 +162,15 @@ run.enrich <- function(to.enrich, group.level,
                                          toType=c("ENSEMBL","SYMBOL"),
                                          OrgDb=genome)
     gene.entrez.list <- to.enrich
-  } else{
-    stop("Function only allows ENSEMBL or ENTREZ IDs")
+  } else if(ID.type == "SYMBOL"){
+    #Convert gene list to Entrez ID
+    gene.entrez <- clusterProfiler::bitr(to.enrich, fromType="SYMBOL",
+                                         toType=c("ENTREZID"),
+                                         OrgDb=genome)
+    
+    gene.entrez.list <- gene.entrez$ENTREZID
+  }else{
+    stop("Function only allows HGNC symbols, ENSEMBL or ENTREZ IDs")
   }
   
 
