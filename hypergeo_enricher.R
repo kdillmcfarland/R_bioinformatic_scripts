@@ -165,7 +165,7 @@ run.enrich <- function(to.enrich, group.level,
   } else if(ID.type == "SYMBOL"){
     #Convert gene list to Entrez ID
     gene.entrez <- clusterProfiler::bitr(to.enrich, fromType="SYMBOL",
-                                         toType=c("ENTREZID"),
+                                         toType=c("ENTREZID", "ENSEMBL"),
                                          OrgDb=genome)
     
     gene.entrez.list <- gene.entrez$ENTREZID
