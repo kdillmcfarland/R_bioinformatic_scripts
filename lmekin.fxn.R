@@ -154,7 +154,7 @@ if(!is.null(kin)){
 }
 
 
-###### Run model with kinship ######
+###### Run models ######
 print("Run models")
 
 #create blank df to hold results
