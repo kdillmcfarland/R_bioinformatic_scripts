@@ -20,30 +20,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Input parameters:
 REQUIRED
   dat = DGEList object of voom normalized data
-  min.CPM = minimum counts per million the genes must reach
-  name = name of results object. Saved in global environment. Default is
+  min.CPM = numeric minimum counts per million the genes must reach
+  name = character string of name for results object. Saved in global environment. Default is
          'dat.filter'
-  names = column name of genes. Default is 'geneName'
+  gene.var = character string of column name containing gene data. Default is 'geneName'
   
 REQUIRED (Use one only)
-  min.sample = Numeric minimum number of samples that must reach min.CPM
-  min.pct = Numeric minimum percent of samples that must reach min.CPM. In
-            whole percent format (10), not decimal (0.10)
+  min.sample = numeric minimum number of samples that must reach min.CPM
+  min.pct = numeric minimum percent of samples that must reach min.CPM. In
+            whole percent format (10), NOT decimal (0.10)
 "
 
 #####
 
-rare.gene.filter <- function(dat, min.CPM, names="geneName",
+rare.gene.filter <- function(dat, min.CPM, gene.var="geneName",
                              min.sample=NULL, min.pct=NULL,
                              name="dat.filter"){
+  ##### Packages #####
+  #Check package install
+  `%notin%` <- Negate(`%in%`)
+  pcks <- c("tidyverse","edgeR")
+  pcks.to.install <- pcks[pcks %notin% rownames(installed.packages())]
+  if(length(pcks.to.install)){
+    print("Please install the following packages.")
+    stop(paste0(pcks.to.install)) }
+  
+  #Load packages
   require(tidyverse)
   require(edgeR)
   
-  if(class(dat) != "DGEList"){
-    stop("dat object must be a DGEList")
-  }
+  ##### Check parameters #####
+  #Correct input object type?
+  if(class(dat) != "DGEList"){ stop("dat object must be a DGEList object") }
+  #min sampes or percent only?
+  if(!is.null(min.sample) & !is.null(min.pct)){ stop("Please provide only one of min.sample or min.pct") }
   
   ##### Define min number of samples #####
+  #Calculate min samples based on percent if provided
   if(!is.null(min.pct)){
     min.sample <- round(nrow(dat$samples)*min.pct/100, digits=0)
   }
@@ -57,18 +70,22 @@ rare.gene.filter <- function(dat, min.CPM, names="geneName",
   not.rare.genes <- names(not.rare.samples[not.rare.samples >= min.sample])
 
   ##### Filter data to remove rare genes #####
-  # Filter counts
   dat.filter <- dat
+  # Filter counts
   dat.filter$counts <- as.data.frame(dat.filter$counts) %>% 
     rownames_to_column() %>% 
     dplyr::filter(rowname %in% not.rare.genes) %>% 
     column_to_rownames()
   
-  #If gene info exist, filter as well
+  #If gene info exists, filter as well
   if(!is.null(dat.filter$genes)){
+    #Gene name column in gene info table?
+    if(gene.var %notin% colnames(dat.filter$genes)){ 
+      stop("Gene name varible not present in gene info (dat$genes)") }
+      
     # Filter gene key
     dat.filter$genes <- as.data.frame(dat.filter$genes) %>% 
-      dplyr::filter(get(names) %in% not.rare.genes)
+      dplyr::filter(get(gene.var) %in% not.rare.genes)
   }
   
   ##### Save to environment #####
