@@ -1,4 +1,4 @@
-"Run linear mixed effects models
+"Run linear models with or without random effects and pairwise kinship
 
 #################
 
@@ -19,26 +19,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Input parameters:
 REQUIRED
   dat = EList object containing normalized gene expression (E), sample metadata (targets), and gene
-        information (genes). Output by voom or voomWithQualityWeights
+        information (genes). Output by voom() or voomWithQualityWeights()
   x.var = character vector of x-variables to use in model
   ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
          Default is 'FULLIDNO'
   p.method = Method of FDR adjustment. Default is 'BH'
   
 OPTIONAL
-  kin = if running models with kinship, a numeric matrix with pairwise kinship values. Must be in the
-        same order as dat
+  kin = if running models with kinship, a numeric matrix with pairwise kinship values. Rows must be in 
+        the same order as dat and have rownames
   co.var = character vector of co-variates to use in model
   interaction = logical if should include interaction between first two x.var. Default is FALSE
   lm, lme = logical if should run corresponding simple linear model or linear mixed effects model 
             without kinship for comparison to full model. Defaults are FALSE
   subset.var = character string of variable name to run subsets of data. Must be 1 variable. Useful
-               for contrasts model
+               for pairise contrast comparisons
   subset.lvl = character string of level of subset.var to subset to
       For example, subset.var = 'condition', subset.lvl = 'MEDIA'
   subset.genes = character vector of genes to test. If not given, function runs all genes in dat
   outdir = character string of output directory. Default is 'results/gene_level/', 
-  name = character string of prefix for output file names Default is 'lme.results'
+  name = character string of prefix for output file names. Default is 'lme.results'
   processors = Numeric for parallel processors. Default is 1
   
 "
@@ -51,14 +51,32 @@ lmekin.loop <- function(dat, kin=NULL, x.var, ptID="FULLIDNO",
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
                         outdir="results/gene_level/", name="lme.results",
                         processors=1, p.method="BH"){
+#Log start time
 old <- Sys.time()
+
+##### Packages #####
+#Check package install
+`%notin%` <- Negate(`%in%`)
+pcks <- c("tidyverse","data.table","limma","lme4","coxme","broom","car","foreach","doParallel")
+pcks.to.install <- pcks[pcks %notin% rownames(installed.packages())]
+if(length(pcks.to.install)){
+  print("Please install the following packages.")
+  stop(paste0(pcks.to.install)) }
+
+#Load packages
+##Table manipulation
 require(tidyverse, quietly = TRUE,warn.conflicts = FALSE)
 require(data.table, quietly = TRUE,warn.conflicts = FALSE)
+##Work with input EList object
 require(limma, quietly = TRUE,warn.conflicts = FALSE)
-library(broom, quietly = TRUE,warn.conflicts = FALSE)
+##Linear mixed effects models
 library(lme4, quietly = TRUE,warn.conflicts = FALSE)
-library(car, quietly = TRUE,warn.conflicts = FALSE)
+##Linear mixed effects models with kinship
 require(coxme, quietly = TRUE,warn.conflicts = FALSE)
+##Extract model results
+library(broom, quietly = TRUE,warn.conflicts = FALSE)
+library(car, quietly = TRUE,warn.conflicts = FALSE)
+##Parallel for loops
 require(foreach, quietly = TRUE,warn.conflicts = FALSE)
 require(doParallel, quietly = TRUE,warn.conflicts = FALSE)
 
@@ -66,11 +84,19 @@ require(doParallel, quietly = TRUE,warn.conflicts = FALSE)
 #setup parallel processors
 registerDoParallel(processors)
 
+###### Check common input parameter errors #####
+if(class(dat)!="EList"){
+  stop("dat must be an EList object output by voom")}
+if(is.null(subset.var) & !is.null(subset.lvl)){
+  stop("Sample subsetting has been selected. Please also provide subset.var")}
+if(!is.null(subset.var) & is.null(subset.lvl)){
+  stop("Sample subsetting has been selected. Please also provide subset.lvl")}
+
 ###### Data #####
 print("Load data")
 
 dat.format <- dat
-#If rownames, move into df
+#If has rownames, move into df
 if(is.numeric(dat$E[,1])){
   dat.format$E <- as.data.frame(dat.format$E) %>% 
     rownames_to_column()
@@ -79,7 +105,7 @@ if(is.numeric(dat$E[,1])){
   colnames(dat.format$E)[1] <- "rowname"
 }
 
-###### Subset if selected ######
+###### Subset to variable of interest if selected ######
 dat.subset <- dat.format
 
 #Subset samples
@@ -99,12 +125,14 @@ if(!is.null(subset.genes)){
 
 ###### Format data for modeling ####
 if(!is.null(kin)){
+  #Combine expression data (E) and sample metadata (targets)
   to.model <- dat.subset$E %>% 
     pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>% 
     inner_join(dat.subset$targets, by="libID") %>% 
     #Remove samples missing kinship
     filter(get(ptID) %in% colnames(kin))
   
+  #Compute number of samples to run in models
   rna.no <- dat.subset$targets %>% 
     distinct(get(ptID)) %>% nrow()
   kin.no <- to.model %>% 
@@ -113,10 +141,12 @@ if(!is.null(kin)){
   message(paste(rna.no-kin.no, "individuals missing kinship data. Running models on", 
                 kin.no))
 }else{
+  #Combine expression data (E) and sample metadata (targets)
   to.model <- dat.subset$E %>% 
     pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>% 
     inner_join(dat.subset$targets, by="libID")
   
+  #Compute number of samples to run in models
   rna.no <- to.model %>% 
     distinct(get(ptID)) %>% nrow()
   
@@ -135,14 +165,51 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   #### Prepare data ####
   #Get gene name
   gene <- dat.subset$E[i,1]
-message(gene)
+  message(gene)
   
   #Filter data to gene
   to.model.gene <- to.model %>% 
     filter(rowname == gene) %>% 
     arrange(ptID)
   
-  #Make model
+  #### Simple LM models, if selected #####
+  #Run linear model without kinship
+  #Place holder LM results
+  p.lm <- NaN
+  sigma.lm <- 0
+  results.lm <- NULL
+
+  if(lm){
+    #Make LM formula. as.formula does not work 
+    if(interaction){
+      model.lm <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
+                     paste(co.var, collapse=" + "), 
+                     sep="")
+    } else {
+      model.lm <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ", 
+                     paste(co.var, collapse=" + "), 
+                     sep="")
+    }
+    
+    #Wrap model run in error catch to allow loop to continue even if a single model fails
+    tryCatch({
+      #Fit model
+      fit.lm <- lm(model.lm, data=to.model.gene)
+          p.lm <- tidy(fit.lm)
+          sigma.lm <- sigma(fit.lm)
+        
+      #Extract results 
+      results.lm <- data.frame(
+        model = rep("lm", nrow(p.lm)),    #Label model as lm
+        gene = rep(gene, nrow(p.lm)),     #gene name
+        variable = p.lm$term,             #variables in model
+        pval = p.lm$p.value,              #P-value
+        sigma = rep(sigma.lm, nrow(p.lm)))#sigma
+    }, error=function(e){})
+  }
+  
+  #### Simple LME models, if selected #####
+  #Make LME formula. as.formula does not work 
   if(interaction){
     model <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
                    paste(co.var, collapse=" + "), " + ", 
@@ -155,63 +222,41 @@ message(gene)
                    sep="")
   }
   
-  #### Basic models, if selected #####
-  p.lm <- NaN
-  sigma.lm <- 0
-  results.lm <- NULL
-  
-  if(lm){
-    if(interaction){
-      model.lm <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
-                     paste(co.var, collapse=" + "), 
-                     sep="")
-    } else {
-      model.lm <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ", 
-                     paste(co.var, collapse=" + "), 
-                     sep="")
-    }
-    
-    tryCatch({
-      fit.lm <- lm(model.lm, data=to.model.gene)
-          p.lm <- tidy(fit.lm)
-          sigma.lm <- sigma(fit.lm)
-          
-      results.lm <- data.frame(
-        model = rep("lm", nrow(p.lm)),
-        gene = rep(gene, nrow(p.lm)),
-        variable = p.lm$term, 
-        pval = p.lm$p.value,
-        sigma = rep(sigma.lm, nrow(p.lm)))
-    }, error=function(e){})
-  }
-  
+  #Place holder LME results
   p.lme <- NaN
   sigma.lme <- 0
   results.lme <- NULL
   
   if(lme){
     tryCatch({
+      #Fit LME model
       fit.lme <- lmer(model, data=to.model.gene)
+          #Estimate P-value
           p.lme <- tidy(Anova(fit.lme))
+          #Calculate sigma
           sigma.lme <- sigma(fit.lme)
           
+      #Extract results
       results.lme <- data.frame(
-        model = rep("lme", nrow(p.lme)),
-        gene = rep(gene, nrow(p.lme)),
-        variable = p.lme$term, 
-        pval = p.lme$p.value,
-        sigma = rep(sigma.lme, nrow(p.lme)))
+        model = rep("lme", nrow(p.lme)),    #Label model as lme
+        gene = rep(gene, nrow(p.lme)),      #gene name
+        variable = p.lme$term,              #variables in model
+        pval = p.lme$p.value,               #P-value
+        sigma = rep(sigma.lme, nrow(p.lme)))#sigma
     }, error=function(e){})
   }
   
   ##### Kinship model ######
+  #Place holder LMEKIN results
   p.kin <- NaN
   sigma.kin <- 0
   results.kin <- NULL
   
   if(!is.null(kin)){
   tryCatch({
+    #Fit LMEKIN model
         fit.kin <- lmekin(as.formula(model), data=to.model.gene, varlist=as.matrix(kin))
+            #Calulate stats
             beta <- fit.kin$coefficients$fixed
             nvar <- length(beta)
             nfrail <- nrow(fit.kin$var) - nvar
@@ -219,41 +264,50 @@ message(gene)
             t <- beta/se
             p.kin <- signif(1 - pchisq((t)^2, 1), 2)
             sigma.kin <- fit.kin$sigma
-            
+        
+        #Extract results
         results.kin <- data.frame(
-            model = rep("lmekin", length(p.kin)),
-            gene = rep(gene, length(p.kin)),
-            variable = names(p.kin), 
-            pval = p.kin,
-            sigma = rep(sigma.kin, length(p.kin)))
+            model = rep("lmekin", length(p.kin)),  #Label model as lmekin
+            gene = rep(gene, length(p.kin)),       #gene name
+            variable = names(p.kin),               #variables in model
+            pval = p.kin,                          #P-value
+            sigma = rep(sigma.kin, length(p.kin))) #sigma
         }, error=function(e){})
   }
       
   #### Combine results #####
+  #All models for this gene
   results <- results.lm %>% 
     bind_rows(results.lme) %>% 
     bind_rows(results.kin) 
-      
+  
+  #This gene to all previous gene results
   fit.results <- rbind(results, fit.results) 
   })
 
 #### Calculate FDR ####
 fit.results.fdr <- fit.results %>% 
+  #Within model and variable
   group_by(model, variable) %>% 
   mutate(FDR=p.adjust(pval, method=p.method)) %>% 
   ungroup() %>% 
+  #Add identifier name to allow for easy combination with other lmekin.fxn() outputs
   mutate(group=name) %>% 
   dplyr::select(group, everything())
 
 #### Save ####
 print("Saving results")
+#Create output directory if not present
 dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+#Define filename
 filename <- paste(outdir, name, ".model.results.csv.gz", sep="")
+#Save to csv. gz compress to save space
 write.table(fit.results.fdr, sep=",", row.names=FALSE, col.names=TRUE,
             file=gzfile(filename))
 
 ###### Fin ###### 
 print("All models complete")
+#Print total time to run
 new <- Sys.time() - old
 print(new)
 }
