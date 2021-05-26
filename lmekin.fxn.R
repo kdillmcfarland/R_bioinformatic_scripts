@@ -17,9 +17,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Input parameters:
-REQUIRED
+REQUIRED DATA
   dat = EList object containing normalized gene expression (E), sample metadata (targets), and gene
         information (genes). Output by voom() or voomWithQualityWeights()
+  OR
+  counts = data frame or matrix with log2 CPM. Rows are genes, columns are libraries
+  meta = data frame with library metadata. Must contain 'libID' with values that match 
+         columns in counts
+  gene.info = data frame with gene annotations. Must contain 'geneName' with values that 
+              match rows in counts
+  
+REQUIRED PARAMETERS  
   x.var = character vector of x-variables to use in model
   ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
          Default is 'FULLIDNO'
@@ -45,7 +53,8 @@ OPTIONAL
 
 #################
 
-lmekin.loop <- function(dat, kin=NULL, x.var, ptID="FULLIDNO",
+lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
+                        kin=NULL, x.var, ptID="FULLIDNO",
                         co.var=NULL, interaction=FALSE, 
                         lm=FALSE, lme=FALSE,
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
@@ -85,8 +94,6 @@ require(doParallel, quietly = TRUE,warn.conflicts = FALSE)
 registerDoParallel(processors)
 
 ###### Check common input parameter errors #####
-if(class(dat)!="EList"){
-  stop("dat must be an EList object output by voom")}
 if(is.null(subset.var) & !is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.var")}
 if(!is.null(subset.var) & is.null(subset.lvl)){
@@ -95,7 +102,41 @@ if(!is.null(subset.var) & is.null(subset.lvl)){
 ###### Data #####
 print("Load data")
 
-dat.format <- dat
+#If data are NOT a voom EList, create a mock version
+if(is.null(dat)) {
+  dat.format <- list()
+  
+  #Expression data
+  ##Move rownames to column if exist
+  ##Order columns as in metadata and genes as in gene.info
+  if(rownames(counts)[1]!=1){
+    counts.format <- as.data.frame(counts) %>% 
+      rownames_to_column() %>% 
+      select(rowname, all_of(meta$libID)) %>% 
+      arrange(match(rowname, gene.info$geneName)) %>% 
+      column_to_rownames()
+  } else {
+    counts.format <- as.data.frame(counts) %>% 
+      rename_if(is.character, ~"rowname")%>% 
+      select(rowname, all_of(meta$libID)) %>% 
+      arrange(match(rowname, gene.info$geneName)) %>% 
+      column_to_rownames()
+  }
+  
+  #Metadata
+  ##Remove samples not in expression data
+  meta.format <- meta %>% 
+    filter(libID %in% colnames(counts.format))
+  
+  #Put in list
+  dat.format$E <- counts.format
+  dat.format$targets <- meta
+  dat.format$genes <- gene.info
+} else {
+  dat.format <- dat
+}
+
+#Format data
 #If has rownames, move into df
 if(is.numeric(dat$E[,1])){
   dat.format$E <- as.data.frame(dat.format$E) %>% 
