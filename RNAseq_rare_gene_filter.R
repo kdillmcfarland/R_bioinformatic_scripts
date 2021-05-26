@@ -23,7 +23,8 @@ REQUIRED
   min.CPM = numeric minimum counts per million the genes must reach
   name = character string of name for results object. Saved in global environment. Default is
          'dat.filter'
-  gene.var = character string of column name containing gene data. Default is 'geneName'
+  gene.var = character string of column name containing gene data. Default is 'geneName'. 
+             Formerly names
   
 REQUIRED (Use one only)
   min.sample = numeric minimum number of samples that must reach min.CPM
@@ -33,7 +34,8 @@ REQUIRED (Use one only)
 
 #####
 
-rare.gene.filter <- function(dat, min.CPM, gene.var="geneName",
+rare.gene.filter <- function(dat, min.CPM, gene.var="geneName", 
+                             names="geneName", #depreciated
                              min.sample=NULL, min.pct=NULL,
                              name="dat.filter"){
   ##### Packages #####
@@ -54,6 +56,8 @@ rare.gene.filter <- function(dat, min.CPM, gene.var="geneName",
   if(class(dat) != "DGEList"){ stop("dat object must be a DGEList object") }
   #min sampes or percent only?
   if(!is.null(min.sample) & !is.null(min.pct)){ stop("Please provide only one of min.sample or min.pct") }
+  #Replace depreciated names parameter
+  if(names != "geneName"){gene.var = names}
   
   ##### Define min number of samples #####
   #Calculate min samples based on percent if provided
