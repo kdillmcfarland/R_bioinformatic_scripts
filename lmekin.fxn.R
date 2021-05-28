@@ -40,6 +40,8 @@ OPTIONAL
   interaction = logical if should include interaction between first two x.var. Default is FALSE
   lm, lme = logical if should run corresponding simple linear model or linear mixed effects model 
             without kinship for comparison to full model. Defaults are FALSE
+  lme.pairwise = logical if should run pairwise comparisons within multiple levels of lme
+                 Default is FALSE
   subset.var = character string of variable name to run subsets of data. Must be 1 variable. Useful
                for pairise contrast comparisons
   subset.lvl = character string of level of subset.var to subset to
@@ -56,7 +58,7 @@ OPTIONAL
 lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
                         kin=NULL, x.var, ptID="FULLIDNO",
                         co.var=NULL, interaction=FALSE, 
-                        lm=FALSE, lme=FALSE,
+                        lm=FALSE, lme=FALSE, lme.pairwise=FALSE,
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
                         outdir="results/gene_level/", name="lme.results",
                         processors=1, p.method="BH"){
@@ -66,7 +68,8 @@ old <- Sys.time()
 ##### Packages #####
 #Check package install
 `%notin%` <- Negate(`%in%`)
-pcks <- c("tidyverse","data.table","limma","lme4","coxme","broom","car","foreach","doParallel")
+pcks <- c("tidyverse","data.table","limma","lme4","coxme","emmeans",
+          "broom","car","foreach","doParallel")
 pcks.to.install <- pcks[pcks %notin% rownames(installed.packages())]
 if(length(pcks.to.install)){
   print("Please install the following packages.")
@@ -80,6 +83,7 @@ require(data.table, quietly = TRUE,warn.conflicts = FALSE)
 require(limma, quietly = TRUE,warn.conflicts = FALSE)
 ##Linear mixed effects models
 library(lme4, quietly = TRUE,warn.conflicts = FALSE)
+library(emmeans, quietly = TRUE,warn.conflicts = FALSE)
 ##Linear mixed effects models with kinship
 require(coxme, quietly = TRUE,warn.conflicts = FALSE)
 ##Extract model results
@@ -315,12 +319,31 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
             sigma = rep(sigma.kin, length(p.kin))) #sigma
         }, error=function(e){})
   }
+  
+  #### Pairwise within lme ####
+  p.pair <- NaN
+  sigma.pair <- 0
+  results.pair <- NULL
+  
+  if(lme.pairwise){
+    #For each x.var
+    for(x.i in x.var){
+      fit.lsmeans <- lsmeans(fit.lme, as.formula(paste("pairwise~",x.i,sep=""))) 
       
+      results.pair <- as.data.frame(fit.lsmeans$contrasts) %>% 
+        select(contrast, p.value) %>% 
+        rename(variable=contrast, pval=p.value) %>% 
+        mutate(model="lsmeans", gene=gene)
+      
+    }
+    
+  }
   #### Combine results #####
   #All models for this gene
   results <- results.lm %>% 
     bind_rows(results.lme) %>% 
-    bind_rows(results.kin) 
+    bind_rows(results.kin) %>% 
+    bind_rows(results.pair)
   
   #This gene to all previous gene results
   fit.results <- rbind(results, fit.results) 
@@ -330,7 +353,8 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
 fit.results.fdr <- fit.results %>% 
   #Within model and variable
   group_by(model, variable) %>% 
-  mutate(FDR=p.adjust(pval, method=p.method)) %>% 
+  mutate(FDR=ifelse(model != "lsmeans",p.adjust(pval, method=p.method),
+                    NA)) %>% 
   ungroup() %>% 
   #Add identifier name to allow for easy combination with other lmekin.fxn() outputs
   mutate(group=name) %>% 
