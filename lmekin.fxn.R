@@ -138,7 +138,7 @@ if(is.null(dat)) {
 
 #Format data
 #If has rownames, move into df
-if(is.numeric(dat$E[,1])){
+if(is.numeric(dat.format$E[,1])){
   dat.format$E <- as.data.frame(dat.format$E) %>% 
     rownames_to_column()
 } else {
