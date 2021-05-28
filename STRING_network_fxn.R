@@ -197,6 +197,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   #### Plot ####
   message("\nPlotting. PLEASE IGNORE attribute warning.")
   #Get xy of nodes for manual layout
+  set.seed(8434)
   ##set layout
   if(layout == "fr"){ xy <- layout_with_fr(subgraph.filter) } else
     if(layout == "bipar"){ xy <- layout_as_bipartite(subgraph.filter) } else
