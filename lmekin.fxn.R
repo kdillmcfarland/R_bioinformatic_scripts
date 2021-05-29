@@ -334,10 +334,9 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
         select(contrast, p.value) %>% 
         rename(variable=contrast, pval=p.value) %>% 
         mutate(model="lsmeans", gene=gene)
-      
     }
-    
   }
+  
   #### Combine results #####
   #All models for this gene
   results <- results.lm %>% 
