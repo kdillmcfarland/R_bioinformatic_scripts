@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Input parameters:
-REQUIRED DATA
+DATA
+REQUIRED 
   dat = EList object containing normalized gene expression (E), sample metadata (targets), and gene
         information (genes). Output by voom() or voomWithQualityWeights()
   OR
@@ -27,17 +28,22 @@ REQUIRED DATA
   gene.info = data frame with gene annotations. Must contain 'geneName' with values that 
               match rows in counts
   
-REQUIRED PARAMETERS  
+MAIN MODEL
+REQUIRED
   x.var = character vector of x-variables to use in model
   ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
          Default is 'FULLIDNO'
-  p.method = Method of FDR adjustment. Default is 'BH'
-  
+  OR
+  full.model = character string of model to use such as '~ variable'. Do not include random effects
+               as this is added based on lmekin, lme, or lm use
 OPTIONAL
-  kin = if running models with kinship, a numeric matrix with pairwise kinship values. Rows must be in 
-        the same order as dat and have rownames
+  kin = if running models with kinship, a numeric matrix with pairwise kinship values. Rows must
+        be in the same order as dat and have rownames
   co.var = character vector of co-variates to use in model
   interaction = logical if should include interaction between first two x.var. Default is FALSE
+         
+OTHER MODEL INFO
+OPTIONAL
   lm, lme = logical if should run corresponding simple linear model or linear mixed effects model 
             without kinship for comparison to full model. Defaults are FALSE
   lme.pairwise = logical if should run pairwise comparisons within multiple levels of lme
@@ -47,6 +53,9 @@ OPTIONAL
   subset.lvl = character string of level of subset.var to subset to
       For example, subset.var = 'condition', subset.lvl = 'MEDIA'
   subset.genes = character vector of genes to test. If not given, function runs all genes in dat
+
+OTHER, OPTIONAL
+  p.method = Method of FDR adjustment. Default is 'BH'
   outdir = character string of output directory. Default is 'results/gene_level/', 
   name = character string of prefix for output file names. Default is 'lme.results'
   processors = Numeric for parallel processors. Default is 1
@@ -59,6 +68,7 @@ lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
                         kin=NULL, x.var, ptID="FULLIDNO",
                         co.var=NULL, interaction=FALSE, 
                         lm=FALSE, lme=FALSE, lme.pairwise=FALSE,
+                        full.model = NULL,
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
                         outdir="results/gene_level/", name="lme.results",
                         processors=1, p.method="BH"){
@@ -102,7 +112,9 @@ if(is.null(subset.var) & !is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.var")}
 if(!is.null(subset.var) & is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.lvl")}
-
+if(grepl("|", full.model)){
+  stop("full.model should not include random effects such as (1|ptID). Please correct")
+}
 ###### Data #####
 print("Load data")
 
@@ -226,7 +238,9 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
 
   if(lm){
     #Make LM formula. as.formula does not work 
-    if(interaction){
+    if(!is.null(full.model)) {
+      model.lm <- paste("expression", full.model, sep="")
+    } else if(interaction){
       model.lm <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
                      paste(co.var, collapse=" + "), 
                      sep="")
@@ -255,7 +269,11 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   
   #### Simple LME models, if selected #####
   #Make LME formula. as.formula does not work 
-  if(interaction){
+  if(!is.null(full.model)) {
+    model <- paste("expression", full.model, " + ", 
+                   "(1|",ptID,")",
+                   sep="") 
+    } else if(interaction){
     model <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
                    paste(co.var, collapse=" + "), " + ", 
                    "(1|",ptID,")",
