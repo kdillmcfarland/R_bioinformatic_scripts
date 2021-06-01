@@ -35,7 +35,10 @@ REQUIRED
          Default is 'FULLIDNO'
   OR
   full.model = character string of model to use such as '~ variable'. Do not include random effects
-               as this is added based on lmekin, lme, or lm use
+               as this is added from ptID based on lmekin, lme, or lm usage
+  ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
+         Default is 'FULLIDNO'
+  
 OPTIONAL
   kin = if running models with kinship, a numeric matrix with pairwise kinship values. Rows must
         be in the same order as dat and have rownames
@@ -112,9 +115,10 @@ if(is.null(subset.var) & !is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.var")}
 if(!is.null(subset.var) & is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.lvl")}
-if(grepl("|", full.model)){
-  stop("full.model should not include random effects such as (1|ptID). Please correct")
-}
+if(!is.null(full.model)){
+  if(grepl("[|]", full.model)){
+    stop("full.model should not include random effects such as (1|ptID). Please correct")} }
+
 ###### Data #####
 print("Load data")
 
