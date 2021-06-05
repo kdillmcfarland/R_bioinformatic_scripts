@@ -12,7 +12,7 @@ RNAseq.meta.clean <- function(data.dir=NULL,
   
   #### Raw and adapter trimmed ####
   if(trim){
-    # Raw and adapter trimmmed seqs
+    # Raw and adapter trimmed seqs
     trim.files <- list.files(data.dir, pattern="*settings", 
                              all.files=FALSE, full.names=TRUE) %>% 
       gsub("//", "/", .)
