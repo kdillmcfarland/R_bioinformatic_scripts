@@ -51,9 +51,9 @@ OPTIONAL
             without kinship for comparison to full model. Defaults are FALSE
   lme.pairwise = logical if should run pairwise comparisons within multiple levels of lme
                  Default is FALSE
-  subset.var = character vector of variable name(s) to run subsets of data. Useful
+  subset.var = character list of variable name(s) to run subsets of data. Useful
                for pairise contrast comparisons
-  subset.lvl = character vector of level(s) of subset.var to subset to. Must lvl is applies to var 
+  subset.lvl = character list of level(s) of subset.var to subset to. Must lvl is applies to var 
                in order written
                For example, subset.var = 'condition', subset.lvl = 'MEDIA'
   subset.genes = character vector of genes to test. If not given, function runs all genes in dat
@@ -174,7 +174,7 @@ dat.subset <- dat.format
 if(!is.null(subset.var)){
   for(i in 1:length(subset.var)) {
     dat.subset$targets <- dat.subset$targets %>% 
-      filter(get(subset.var[i]) == subset.lvl[i])
+      filter(get(subset.var[[i]]) %in% subset.lvl[[i]])
     
     dat.subset$E <- as.data.frame(dat.subset$E) %>% 
       dplyr::select(rowname, all_of(dat.subset$targets$libID))
