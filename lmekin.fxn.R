@@ -213,7 +213,7 @@ if(!is.null(kin)){
   
   #Compute number of samples to run in models
   rna.no <- to.model %>% 
-    distinct(get(ptID)) %>% nrow()
+    distinct(get("ptID")) %>% nrow()
   
   message(paste("No kinship provided. Running models on",  rna.no, "individuals"))
 }
