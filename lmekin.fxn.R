@@ -394,7 +394,7 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
     bind_rows(results.pair)
   
   #This gene to all previous gene results
-  fit.results <- rbind(results, fit.results) 
+  fit.results <- bind_rows(results, fit.results) 
   })
 
 #### Calculate FDR ####
