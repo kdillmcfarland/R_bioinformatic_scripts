@@ -51,6 +51,8 @@ OPTIONAL
             without kinship for comparison to full model. Defaults are FALSE
   lme.pairwise = logical if should run pairwise comparisons within multiple levels of lme
                  Default is FALSE
+  contrast.matrix = matrix of contrasts desired from lsmeans, such as that produced by limma::makeContrasts. 
+                    Rows & columns should correspond to levels of x.var if lme.pairwise=TRUE. Default is NULL.
   subset.var = character list of variable name(s) to run subsets of data. Useful
                for pairise contrast comparisons
   subset.lvl = character list of level(s) of subset.var to subset to. Must lvl is applies to var 
@@ -71,7 +73,7 @@ OTHER, OPTIONAL
 lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
                         kin=NULL, x.var, ptID="FULLIDNO",
                         co.var=NULL, interaction=FALSE, 
-                        lm=FALSE, lme=FALSE, lme.pairwise=FALSE,
+                        lm=FALSE, lme=FALSE, lme.pairwise=FALSE, contrast.matrix=NULL,
                         full.model = NULL,
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
                         outdir="results/gene_level/", name="lme.results",
@@ -354,11 +356,32 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   if(lme.pairwise){
     #For each x.var
     for(x.i in x.var){
-      fit.lsmeans <- lsmeans(fit.lme, as.formula(paste("pairwise~",x.i,sep=""))) 
+      
+      fit.lsmeans<-list()
+      
+      if(!is.null(contrast.matrix)){
+        # Check that contrast matrix is appropriately formated
+        
+        if(!all(rownames(contrast.matrix) == dplyr::select(meta, x.var)%>%unlist()%>%as.factor()%>%levels())){
+          print("Error: contrast matrix provided does not correspond to levels of x.var specified for comparisons.Check that matrix row-order corresponds to factor levels.")
+          } else{
+          
+          # format contrasts for lsmeans
+          contrast.list<-
+            contrast.matrix%>%
+            as.data.frame()%>%
+            as.list()
+        
+        # Calculate emmeans of fit and generate contrasts 
+        fit.lsmeans$contrasts <- lsmeans(fit.lme, x.i) %>% emmeans::contrast(contrast.list)
+        
+      }}else {
+      
+      fit.lsmeans <- lsmeans(fit.lme, as.formula(paste("pairwise~",x.i,sep=""))) }
       
       results.pair <- as.data.frame(fit.lsmeans$contrasts) %>% 
-        select(contrast, p.value) %>% 
-        rename(variable=contrast, pval=p.value) %>% 
+        select(contrast, estimate, SE, p.value) %>% 
+        rename(variable=contrast, logFC=estimate, logFC_se=SE,pval=p.value) %>% 
         mutate(model="lsmeans", gene=gene)
     }
   }
@@ -378,7 +401,7 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
 fit.results.fdr <- fit.results %>% 
   #Within model and variable
   group_by(model, variable) %>% 
-  mutate(FDR=ifelse(model != "lsmeans",p.adjust(pval, method=p.method),
+  mutate(FDR=ifelse(model != "lsmeans", p.adjust(pval, method=p.method),
                     NA)) %>% 
   ungroup() %>% 
   #Add identifier name to allow for easy combination with other lmekin.fxn() outputs
