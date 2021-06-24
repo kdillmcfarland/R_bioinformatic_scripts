@@ -31,12 +31,12 @@ REQUIRED
 MAIN MODEL
 REQUIRED
   x.var = character vector of x-variables to use in model
-  ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
+  patientID = character string of variable name of IDs to match expression, meta, and kinship data. 
          Default is 'FULLIDNO'
   OR
   full.model = character string of model to use such as '~ variable'. Do not include random effects
-               as this is added from ptID based on lmekin, lme, or lm usage
-  ptID = character string of variable name of IDs to match expression, meta, and kinship data. 
+               as this is added from patientID based on lmekin, lme, or lm usage
+  patientID = character string of variable name of IDs to match expression, meta, and kinship data. 
          Default is 'FULLIDNO'
   
 OPTIONAL
@@ -69,7 +69,7 @@ OTHER, OPTIONAL
 #################
 
 lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
-                        kin=NULL, x.var, ptID="FULLIDNO",
+                        kin=NULL, x.var, patientID="FULLIDNO",
                         co.var=NULL, interaction=FALSE, 
                         lm=FALSE, lme=FALSE, lme.pairwise=FALSE,
                         full.model = NULL,
@@ -118,7 +118,7 @@ if(!is.null(subset.var) & is.null(subset.lvl)){
   stop("Sample subsetting has been selected. Please also provide subset.lvl")}
 if(!is.null(full.model)){
   if(grepl("[|]", full.model)){
-    stop("full.model should not include random effects such as (1|ptID). Please correct")} }
+    stop("full.model should not include random effects such as (1|patientID). Please correct")} }
 
 ###### Data #####
 print("Load data")
@@ -195,13 +195,13 @@ if(!is.null(kin)){
     pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>% 
     inner_join(dat.subset$targets, by="libID") %>% 
     #Remove samples missing kinship
-    filter(get(ptID) %in% colnames(kin))
+    filter(get(patientID) %in% colnames(kin))
   
   #Compute number of samples to run in models
   rna.no <- dat.subset$targets %>% 
-    distinct(get(ptID)) %>% nrow()
+    distinct(get(patientID)) %>% nrow()
   kin.no <- to.model %>% 
-    distinct(get(ptID)) %>% nrow()
+    distinct(get(patientID)) %>% nrow()
   
   message(paste(rna.no-kin.no, "individuals missing kinship data. Running models on", 
                 kin.no))
@@ -213,7 +213,7 @@ if(!is.null(kin)){
   
   #Compute number of samples to run in models
   rna.no <- to.model %>% 
-    distinct(get(ptID)) %>% nrow()
+    distinct(get(patientID)) %>% nrow()
   
   message(paste("No kinship provided. Running models on",  rna.no, "individuals"))
 }
@@ -235,7 +235,7 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   #Filter data to gene
   to.model.gene <- to.model %>% 
     filter(rowname == gene) %>% 
-    arrange(ptID)
+    arrange(patientID)
   
   #### Simple LM models, if selected #####
   #Run linear model without kinship
@@ -279,17 +279,17 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   #Make LME formula. as.formula does not work 
   if(!is.null(full.model)) {
     model <- paste("expression", full.model, " + ", 
-                   "(1|",ptID,")",
+                   "(1|",patientID,")",
                    sep="") 
     } else if(interaction){
     model <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
                    paste(co.var, collapse=" + "), " + ", 
-                   "(1|",ptID,")",
+                   "(1|",patientID,")",
                    sep="")
   } else {
     model <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ", 
                    paste(co.var, collapse=" + "), " + ", 
-                   "(1|",ptID,")",
+                   "(1|",patientID,")",
                    sep="")
   }
   
