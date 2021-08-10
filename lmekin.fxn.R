@@ -18,61 +18,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Input parameters:
 DATA
-REQUIRED 
+REQUIRED
   dat = EList object containing normalized gene expression (E), sample metadata (targets), and gene
         information (genes). Output by voom() or voomWithQualityWeights()
   OR
   counts = data frame or matrix with log2 CPM. Rows are genes, columns are libraries
-  meta = data frame with library metadata. Must contain 'libID' with values that match 
+  meta = data frame with library metadata. Must contain 'libID' with values that match
          columns in counts
-  gene.info = data frame with gene annotations. Must contain 'geneName' with values that 
+  gene.info = data frame with gene annotations. Must contain 'geneName' with values that
               match rows in counts
-  
+
 MAIN MODEL
 REQUIRED
   x.var = character vector of x-variables to use in model
-  patientID = character string of variable name of IDs to match expression, meta, and kinship data. 
+  patientID = character string of variable name of IDs to match expression, meta, and kinship data.
          Default is 'FULLIDNO'
   OR
   full.model = character string of model to use such as '~ variable'. Do not include random effects
                as this is added from patientID based on lmekin, lme, or lm usage
-  patientID = character string of variable name of IDs to match expression, meta, and kinship data. 
+  patientID = character string of variable name of IDs to match expression, meta, and kinship data.
          Default is 'FULLIDNO'
-  
+
 OPTIONAL
   kin = if running models with kinship, a numeric matrix with pairwise kinship values. Rows must
         be in the same order as dat and have rownames
   co.var = character vector of co-variates to use in model
   interaction = logical if should include interaction between first two x.var. Default is FALSE
-         
+
 OTHER MODEL INFO
 OPTIONAL
-  lm, lme = logical if should run corresponding simple linear model or linear mixed effects model 
+  lm, lme = logical if should run corresponding simple linear model or linear mixed effects model
             without kinship for comparison to full model. Defaults are FALSE
   lme.pairwise = logical if should run pairwise comparisons within multiple levels of lme
                  Default is FALSE
-  contrast.matrix = matrix of contrasts desired from lsmeans, such as that produced by limma::makeContrasts. 
+  contrast.matrix = matrix of contrasts desired from lsmeans, such as that produced by limma::makeContrasts.
                     Rows & columns should correspond to levels of x.var if lme.pairwise=TRUE. Default is NULL.
   subset.var = character list of variable name(s) to run subsets of data. Useful
                for pairise contrast comparisons
-  subset.lvl = character list of level(s) of subset.var to subset to. Must lvl is applies to var 
+  subset.lvl = character list of level(s) of subset.var to subset to. Must lvl is applies to var
                in order written
                For example, subset.var = 'condition', subset.lvl = 'MEDIA'
   subset.genes = character vector of genes to test. If not given, function runs all genes in dat
 
 OTHER, OPTIONAL
   p.method = Method of FDR adjustment. Default is 'BH'
-  outdir = character string of output directory. Default is 'results/gene_level/', 
+  outdir = character string of output directory. Default is 'results/gene_level/',
   name = character string of prefix for output file names. Default is 'lme.results'
   processors = Numeric for parallel processors. Default is 1
-  
+
 "
 
 #################
 
 lmekin.loop <- function(dat=NULL, counts=NULL, meta=NULL, gene.info=NULL,
                         kin=NULL, x.var, patientID="FULLIDNO",
-                        co.var=NULL, interaction=FALSE, 
+                        co.var=NULL, interaction=FALSE,
                         lm=FALSE, lme=FALSE, lme.pairwise=FALSE, contrast.matrix=NULL,
                         full.model = NULL,
                         subset.var = NULL, subset.lvl = NULL, subset.genes = NULL,
@@ -109,7 +109,7 @@ library(car, quietly = TRUE,warn.conflicts = FALSE)
 require(foreach, quietly = TRUE,warn.conflicts = FALSE)
 require(doParallel, quietly = TRUE,warn.conflicts = FALSE)
 
-###### Parallel ###### 
+###### Parallel ######
 #setup parallel processors
 registerDoParallel(processors)
 
@@ -128,29 +128,29 @@ print("Load data")
 #If data are NOT a voom EList, create a mock version
 if(is.null(dat)) {
   dat.format <- list()
-  
+
   #Expression data
   ##Move rownames to column if exist
   ##Order columns as in metadata and genes as in gene.info
   if(rownames(counts)[1]!=1){
-    counts.format <- as.data.frame(counts) %>% 
-      rownames_to_column() %>% 
-      select(rowname, all_of(meta$libID)) %>% 
-      arrange(match(rowname, gene.info$geneName)) %>% 
+    counts.format <- as.data.frame(counts) %>%
+      rownames_to_column() %>%
+      select(rowname, all_of(meta$libID)) %>%
+      arrange(match(rowname, gene.info$geneName)) %>%
       column_to_rownames()
   } else {
-    counts.format <- as.data.frame(counts) %>% 
-      rename_if(is.character, ~"rowname")%>% 
-      select(rowname, all_of(meta$libID)) %>% 
-      arrange(match(rowname, gene.info$geneName)) %>% 
+    counts.format <- as.data.frame(counts) %>%
+      rename_if(is.character, ~"rowname")%>%
+      select(rowname, all_of(meta$libID)) %>%
+      arrange(match(rowname, gene.info$geneName)) %>%
       column_to_rownames()
   }
-  
+
   #Metadata
   ##Remove samples not in expression data
-  meta.format <- meta %>% 
+  meta.format <- meta %>%
     filter(libID %in% colnames(counts.format))
-  
+
   #Put in list
   dat.format$E <- counts.format
   dat.format$targets <- meta
@@ -162,7 +162,7 @@ if(is.null(dat)) {
 #Format data
 #If has rownames, move into df
 if(is.numeric(dat.format$E[,1])){
-  dat.format$E <- as.data.frame(dat.format$E) %>% 
+  dat.format$E <- as.data.frame(dat.format$E) %>%
     rownames_to_column()
 } else {
 #Rename 1st column
@@ -175,48 +175,48 @@ dat.subset <- dat.format
 #Subset samples
 if(!is.null(subset.var)){
   for(i in 1:length(subset.var)) {
-    dat.subset$targets <- dat.subset$targets %>% 
+    dat.subset$targets <- dat.subset$targets %>%
       filter(get(subset.var[[i]]) %in% subset.lvl[[i]])
-    
-    dat.subset$E <- as.data.frame(dat.subset$E) %>% 
+
+    dat.subset$E <- as.data.frame(dat.subset$E) %>%
       dplyr::select(rowname, all_of(dat.subset$targets$libID))
   }
-  
+
 }
 
 #Subset genes
 if(!is.null(subset.genes)){
-  dat.subset$E <- as.data.frame(dat.subset$E) %>% 
+  dat.subset$E <- as.data.frame(dat.subset$E) %>%
     filter(rowname %in% subset.genes)
 }
 
 ###### Format data for modeling ####
 if(!is.null(kin)){
   #Combine expression data (E) and sample metadata (targets)
-  to.model <- dat.subset$E %>% 
-    pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>% 
-    inner_join(dat.subset$targets, by="libID") %>% 
+  to.model <- dat.subset$E %>%
+    pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>%
+    inner_join(dat.subset$targets, by="libID") %>%
     #Remove samples missing kinship
     filter(get(patientID) %in% colnames(kin))
-  
+
   #Compute number of samples to run in models
-  rna.no <- dat.subset$targets %>% 
+  rna.no <- dat.subset$targets %>%
     distinct(get(patientID)) %>% nrow()
-  kin.no <- to.model %>% 
+  kin.no <- to.model %>%
     distinct(get(patientID)) %>% nrow()
-  
-  message(paste(rna.no-kin.no, "individuals missing kinship data. Running models on", 
+
+  message(paste(rna.no-kin.no, "individuals missing kinship data. Running models on",
                 kin.no))
 }else{
   #Combine expression data (E) and sample metadata (targets)
-  to.model <- dat.subset$E %>% 
-    pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>% 
+  to.model <- dat.subset$E %>%
+    pivot_longer(-rowname, names_to = "libID", values_to = "expression") %>%
     inner_join(dat.subset$targets, by="libID")
-  
+
   #Compute number of samples to run in models
-  rna.no <- to.model %>% 
+  rna.no <- to.model %>%
     distinct(get(patientID)) %>% nrow()
-  
+
   message(paste("No kinship provided. Running models on",  rna.no, "individuals"))
 }
 
@@ -233,12 +233,12 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   #Get gene name
   gene <- dat.subset$E[i,1]
   message(gene)
-  
+
   #Filter data to gene
-  to.model.gene <- to.model %>% 
-    filter(rowname == gene) %>% 
+  to.model.gene <- to.model %>%
+    filter(rowname == gene) %>%
     arrange(patientID)
-  
+
   #### Simple LM models, if selected #####
   #Run linear model without kinship
   #Place holder LM results
@@ -247,27 +247,27 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
   results.lm <- NULL
 
   if(lm){
-    #Make LM formula. as.formula does not work 
+    #Make LM formula. as.formula does not work
     if(!is.null(full.model)) {
       model.lm <- paste("expression", full.model, sep="")
     } else if(interaction){
-      model.lm <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
-                     paste(co.var, collapse=" + "), 
+      model.lm <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ",
+                     paste(co.var, collapse=" + "),
                      sep="")
     } else {
-      model.lm <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ", 
-                     paste(co.var, collapse=" + "), 
+      model.lm <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ",
+                     paste(co.var, collapse=" + "),
                      sep="")
     }
-    
+
     #Wrap model run in error catch to allow loop to continue even if a single model fails
     tryCatch({
       #Fit model
       fit.lm <- lm(model.lm, data=to.model.gene)
           p.lm <- tidy(fit.lm)
           sigma.lm <- sigma(fit.lm)
-        
-      #Extract results 
+
+      #Extract results
       results.lm <- data.frame(
         model = rep("lm", nrow(p.lm)),    #Label model as lm
         gene = rep(gene, nrow(p.lm)),     #gene name
@@ -276,30 +276,30 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
         sigma = rep(sigma.lm, nrow(p.lm)))#sigma
     }, error=function(e){})
   }
-  
+
   #### Simple LME models, if selected #####
-  #Make LME formula. as.formula does not work 
+  #Make LME formula. as.formula does not work
   if(!is.null(full.model)) {
-    model <- paste("expression", full.model, " + ", 
+    model <- paste("expression", full.model, " + ",
                    "(1|",patientID,")",
-                   sep="") 
+                   sep="")
     } else if(interaction){
-    model <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ", 
-                   paste(co.var, collapse=" + "), " + ", 
+    model <- paste("expression ~ ", paste(x.var, collapse=" * "), " + ",
+                   paste(co.var, collapse=" + "), " + ",
                    "(1|",patientID,")",
                    sep="")
   } else {
-    model <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ", 
-                   paste(co.var, collapse=" + "), " + ", 
+    model <- paste("expression ~ ", paste(x.var, collapse=" + "), " + ",
+                   paste(co.var, collapse=" + "), " + ",
                    "(1|",patientID,")",
                    sep="")
   }
-  
+
   #Place holder LME results
   p.lme <- NaN
   sigma.lme <- 0
   results.lme <- NULL
-  
+
   if(lme){
     tryCatch({
       #Fit LME model
@@ -308,7 +308,7 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
           p.lme <- tidy(Anova(fit.lme))
           #Calculate sigma
           sigma.lme <- sigma(fit.lme)
-          
+
       #Extract results
       results.lme <- data.frame(
         model = rep("lme", nrow(p.lme)),    #Label model as lme
@@ -318,13 +318,13 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
         sigma = rep(sigma.lme, nrow(p.lme)))#sigma
     }, error=function(e){})
   }
-  
+
   ##### Kinship model ######
   #Place holder LMEKIN results
   p.kin <- NaN
   sigma.kin <- 0
   results.kin <- NULL
-  
+
   if(!is.null(kin)){
   tryCatch({
     #Fit LMEKIN model
@@ -337,7 +337,7 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
             t <- beta/se
             p.kin <- signif(1 - pchisq((t)^2, 1), 2)
             sigma.kin <- fit.kin$sigma
-        
+
         #Extract results
         results.kin <- data.frame(
             model = rep("lmekin", length(p.kin)),  #Label model as lmekin
@@ -347,65 +347,64 @@ fit.results <- rbindlist(fill=TRUE, foreach(i=1:nrow(dat.subset$E)) %dopar% {
             sigma = rep(sigma.kin, length(p.kin))) #sigma
         }, error=function(e){})
   }
-  
+
   #### Pairwise within lme ####
   p.pair <- NaN
   sigma.pair <- 0
   results.pair <- NULL
-  
+
   if(lme.pairwise){
     #For each x.var
     for(x.i in x.var){
-      
+
       fit.lsmeans<-list()
-      
+
       if(!is.null(contrast.matrix)){
         # Check that contrast matrix is appropriately formated
-        
-        if(!all(rownames(contrast.matrix) == dplyr::select(meta, x.var)%>%unlist()%>%as.factor()%>%levels())){
-          print("Error: contrast matrix provided does not correspond to levels of x.var specified for comparisons.Check that matrix row-order corresponds to factor levels.")
+
+
           } else{
-          
+
           # format contrasts for lsmeans
           contrast.list<-
             contrast.matrix%>%
             as.data.frame()%>%
             as.list()
-        
-        # Calculate emmeans of fit and generate contrasts 
+
+        # Calculate emmeans of fit and generate contrasts
         fit.lsmeans$contrasts <- lsmeans(fit.lme, x.i) %>% emmeans::contrast(contrast.list)
-        
+
       }}else {
-      
+
       fit.lsmeans <- lsmeans(fit.lme, as.formula(paste("pairwise~",x.i,sep=""))) }
-      
-      results.pair <- as.data.frame(fit.lsmeans$contrasts) %>% 
-        select(contrast, estimate, SE, p.value) %>% 
-        rename(variable=contrast, logFC=estimate, logFC_se=SE,pval=p.value) %>% 
+
+      results.pair <- as.data.frame(fit.lsmeans$contrasts) %>%
+        select(contrast, estimate, SE, p.value) %>%
+        rename(variable=contrast, logFC=estimate, logFC_se=SE,pval=p.value) %>%
         mutate(model="lsmeans", gene=gene)
     }
   }
-  
+
   #### Combine results #####
   #All models for this gene
-  results <- results.lm %>% 
-    bind_rows(results.lme) %>% 
-    bind_rows(results.kin) %>% 
+  results <- results.lm %>%
+    bind_rows(results.lme) %>%
+    bind_rows(results.kin) %>%
     bind_rows(results.pair)
-  
+
   #This gene to all previous gene results
-  fit.results <- bind_rows(results, fit.results) 
+  fit.results <- bind_rows(results, fit.results)
   })
 
 #### Calculate FDR ####
-fit.results.fdr <- fit.results %>% 
+fit.results.fdr <- fit.results %>%
   #Within model and variable
-  group_by(model, variable) %>% 
+  group_by(model, variable) %>%
   mutate(FDR=ifelse(model != "lsmeans", p.adjust(pval, method=p.method),
-                    NA)) %>% 
-  ungroup() %>% 
+                    NA)) %>%
+  ungroup() %>%
   #Add identifier name to allow for easy combination with other lmekin.fxn() outputs
-  mutate(group=name) %>% 
+  mutate(group=name) %>%
   dplyr::select(group, everything())
 
 #### Save ####
@@ -418,7 +417,7 @@ filename <- paste(outdir, name, ".model.results.csv.gz", sep="")
 write.table(fit.results.fdr, sep=",", row.names=FALSE, col.names=TRUE,
             file=gzfile(filename))
 
-###### Fin ###### 
+###### Fin ######
 print("All models complete")
 #Print total time to run
 new <- Sys.time() - old
