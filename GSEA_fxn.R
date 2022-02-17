@@ -99,39 +99,43 @@ GSEA <- function(gene_list, gmt_file=NULL, gmt_ls=NULL, nperm=1000,
         rownames_to_column("pathway")
       #Combine most significant q value for each term
       gs.signif <- full_join(ups, downs, by=c("pathway", "set.size")) %>% 
-        dplyr::select(pathway, q.val.x, q.val.y, set.size) %>% 
+        dplyr::select(pathway, p.val.x, p.val.y, q.val.x, q.val.y, set.size) %>% 
         pivot_longer(-c(pathway,set.size)) %>% 
+        separate(name, into=c("name","trash","group"), sep="[.]") %>% 
         drop_na(value) %>% 
+        pivot_wider() %>% 
         group_by(pathway, set.size) %>% 
-        dplyr::summarise(min.q = min(value, na.rm=TRUE),
-                  name = name[value == min.q],
+        dplyr::summarise(min.p = min(p, na.rm=TRUE),
+                         min.q = min(q, na.rm=TRUE),
+                         group = group[q == min.q],
                   .groups = "keep")
       
       #Combine up/down results
       ga.result.format <- ups %>% 
         mutate(gage.FC = "up") %>% 
-        filter(pathway %in% filter(gs.signif, name == "q.val.x")$pathway)
+        filter(pathway %in% filter(gs.signif, group == "x")$pathway)
       ga.result.format <- downs %>% 
         mutate(gage.FC = "down") %>%
-        filter(pathway %in% filter(gs.signif, name == "q.val.y")$pathway) %>% 
+        filter(pathway %in% filter(gs.signif, group == "y")$pathway) %>% 
         bind_rows(ga.result.format)
       
       #### Combine results ####
       gsea.result <- fg.result %>% 
-        dplyr::select(pathway, padj, ES, NES, size, leadingEdge) %>% 
+        dplyr::select(pathway, pval, padj, ES, NES, size, leadingEdge) %>% 
         mutate(fgsea.FC = ifelse(NES < 0, "down","up")) %>% 
-        dplyr::rename(fgsea.FDR = padj, fgsea.NES = NES, 
+        dplyr::rename(fgsea.pval = pval, fgsea.FDR = padj, fgsea.NES = NES, 
                fgsea.ES=ES, fgsea.size=size, fgsea.leadingEdge=leadingEdge) %>% 
         #format leading edge list
         unnest(cols = c(fgsea.leadingEdge)) %>% 
-        group_by(pathway,fgsea.FDR,fgsea.ES,fgsea.NES,fgsea.size,fgsea.FC) %>% 
-        summarise(fgsea.leadingEdge=paste(unique(fgsea.leadingEdge), collapse=";"),
+        group_by(pathway,fgsea.pval,fgsea.FDR,fgsea.ES,
+                 fgsea.NES,fgsea.size,fgsea.FC) %>% 
+        dplyr::summarise(fgsea.leadingEdge=paste(unique(fgsea.leadingEdge), collapse=";"),
                   .groups="drop") %>% 
         #add GAGE results
         full_join(ga.result.format, by="pathway") %>% 
-        dplyr::select(pathway:fgsea.leadingEdge, q.val, p.geomean,
+        dplyr::select(pathway:fgsea.leadingEdge, p.val, q.val, p.geomean,
                       stat.mean, set.size, gage.FC) %>% 
-        dplyr::rename(gage.FDR = q.val, gage.geomean = p.geomean, 
+        dplyr::rename(gage.pval=p.val, gage.FDR = q.val, gage.geomean = p.geomean, 
                       gage.statmean = stat.mean,
                       gage.size=set.size)  
       
