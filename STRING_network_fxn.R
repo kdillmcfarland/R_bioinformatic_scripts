@@ -39,6 +39,7 @@ Coloring by enrichment terms
                       Default is 2 
   p.adjust = FDR maximum for enrichment terms to include in plot. Default is 0.2
   colors = Vector of colors for manual scales. Default it to use ggplot colors.
+  node.text.size = Numeric
 Saving plot
   basename = Character to prepend to output names.
   outdir = Character for output directory for plot
@@ -51,7 +52,8 @@ string.plot <- function(genes, version="11", score_threshold=400,
                         enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
                         discard="none",
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
-                        colors=NULL, outdir=NULL, basename=NULL,
+                        colors=NULL, node.text.size=2,
+                        outdir=NULL, basename=NULL,
                         width=10, height=10
                         ){
   #Working with dataframes
@@ -237,14 +239,16 @@ string.plot <- function(genes, version="11", score_threshold=400,
                       pie_scale = 0.7) +
       scale_fill_manual(values=color.vec, name="Enrichment") +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
-                        label=V(subgraph.filter)$symbol), size=2) +
+                        label=V(subgraph.filter)$symbol), 
+                    size=node.text.size) +
       theme_blank() + coord_fixed()
   } else{
     plot.col <- plot + 
       geom_nodes(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
                      fill=NULL), size = 5, color=color.vec) +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
-                          label=V(subgraph.filter)$symbol), size=2) +
+                          label=V(subgraph.filter)$symbol), 
+                    size=node.text.size) +
       theme_blank() + coord_fixed()
   }
   
