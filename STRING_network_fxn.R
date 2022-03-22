@@ -85,9 +85,11 @@ string.plot <- function(genes, version="11", score_threshold=400,
     message("\nFormatting enrichment colors")
     #Get significant enrichments
     col.mat <- enrichment %>% 
+      ungroup() %>% 
       dplyr::select(Description, size.overlap.term, p.adjust,
                     all_of(ID)) %>% 
-      dplyr::filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust)
+      dplyr::filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust) %>% 
+      dplyr::select(-size.overlap.term, -p.adjust)
       
     #Error if no terms to plot
     if(nrow(col.mat)==0) {stop("No significant enrichment terms. 
@@ -102,7 +104,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
       distinct(gene, Description) %>% 
       dplyr::mutate(value=1) %>% 
       #Add string ID
-      left_join(map, by = "gene") %>% 
+      inner_join(map, by = "gene") %>% 
       dplyr::select(-gene) %>% 
       dplyr::distinct() %>% 
       #Calculate terms per ID
