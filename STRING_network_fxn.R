@@ -132,7 +132,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
     #Collapse duplicate STRING ID
     map.unique <- map %>% 
       group_by(STRING_id) %>% 
-      dplyr::summarise(gene = paste(unique(gene), collapse = " / "), .groups="drop")
+      dplyr::mutate_if(is.numeric, ~replace_na(., 0))
   }
  
   #### Network ####
