@@ -126,7 +126,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
       dplyr::mutate(none = ifelse(is.na(total),1,0)) %>% 
       ungroup() %>% 
       #fill in 0
-      plyr::mutate_if(is.numeric, ~replace_na(., 0))
+      dplyr::mutate_if(is.numeric, ~replace_na(., 0))
 
   } else {
     #Collapse duplicate STRING ID
