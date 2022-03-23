@@ -52,7 +52,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
                         enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
                         discard="none",
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
-                        colors=NULL, node.text.size=2,
+                        colors=NULL, node.text.size=2, pie_scale=1,
                         outdir=NULL, basename=NULL,
                         width=10, height=10
                         ){
@@ -236,7 +236,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
     plot.col <- plot + 
       geom_scatterpie(data=as_data_frame(subgraph.filter, "vertices"),
                       cols=colnames(map.arrange)[-c(1:3)], color=NA,
-                      pie_scale = 0.7) +
+                      pie_scale = pie_scale) +
       scale_fill_manual(values=color.vec, name="Enrichment") +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
                         label=V(subgraph.filter)$symbol), 
@@ -245,7 +245,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
   } else{
     plot.col <- plot + 
       geom_nodes(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
-                     fill=NULL), size = 5, color=color.vec) +
+                     fill=NULL), size = pie_scale*10, color=color.vec) +
       geom_nodetext(aes(x = V(subgraph.filter)$x, y = V(subgraph.filter)$y,
                           label=V(subgraph.filter)$symbol), 
                     size=node.text.size) +
