@@ -88,10 +88,8 @@ string.plot <- function(genes, version="11", score_threshold=400,
     #Get significant enrichments
     col.mat <- enrichment %>% 
       ungroup() %>% 
-      dplyr::select(Description, size.overlap.term, p.adjust,
-                    all_of(ID)) %>% 
       dplyr::filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust) %>% 
-      dplyr::select(-size.overlap.term, -p.adjust)
+      dplyr::select(Description, all_of(ID))
       
     #Error if no terms to plot
     if(nrow(col.mat)==0) {stop("No significant enrichment terms. 
