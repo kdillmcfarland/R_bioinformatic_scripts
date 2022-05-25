@@ -54,28 +54,23 @@ Example
 ##### Loop function #####
 enrich.fxn <- function(gene.list=NULL,
                        gene.df=NULL, df.group="group",
-                       category, subcategory=NULL,
-                       ID.type=NULL,
-                       genome, 
-                       basename=NULL, outdir="results/enrichment/"){
+                       species=c("human","mouse"), 
+                       category=c("H","C2","C5"), subcategory=NULL,
+                       db=NULL, #Add fxn to let user input df with gs_name and gene
+                       ID.type=c("symbol","ensembl","entrez")){
   
-##### Setup #####
+  ##### Setup #####
   require(clusterProfiler)
   require(msigdbr)
   require(tidyverse)
-  require(plyr)
-  if(genome== "org.Hs.eg.db"){
-    require(org.Hs.eg.db)}
-  if(genome== "org.Mm.eg.db"){
-    require(org.Mm.eg.db)}
   
   #Silence warnings
   options(warn=-1)
-
+  
   #Blank holders
   results <- list()
   
-##### Loop through gene df #####
+  ##### Loop through gene df #####
   if(!is.null(gene.df)){
     #List all possible group levels
     group.list <- unique(gene.df[,df.group])
@@ -85,187 +80,65 @@ enrich.fxn <- function(gene.list=NULL,
       #Get gene list for each group level
       to.enrich <- gene.df %>% 
         filter(get(df.group) == group.level) %>% 
-        dplyr::select(geneName) %>% unlist(use.names = FALSE)
+        dplyr::pull(geneName) #Need to make robust to different column names
       #Run enrich and save to results list
       results[[group.level]] <- run.enrich(to.enrich = to.enrich, 
-                                         group.level = group.level,
-                                         genome=genome, 
-                                         category=category,
-                                         subcategory=subcategory,
-                                         ID.type=ID.type)
-    }
-    
-##### Loop through gene lists #####
-  } else if(!is.null(gene.list)){
-    for(group.level in names(gene.list)){
-      print(group.level)
-      #Get gene list for each group level
-        to.enrich <- gene.list[[group.level]]
-        
-        #Run enrich and save to results list 
-        results[[group.level]] <- run.enrich(to.enrich = to.enrich, 
                                            group.level = group.level,
-                                           genome=genome, 
+                                           species=species, 
                                            category=category,
                                            subcategory=subcategory,
                                            ID.type=ID.type)
     }
-##### Stop if no genes provided #####
+    
+    ##### Loop through gene lists #####
+  } else if(!is.null(gene.list)){
+    for(group.level in names(gene.list)){
+      print(group.level)
+      #Get gene list for each group level
+      to.enrich <- gene.list[[group.level]]
+      
+      #Run enrich and save to results list 
+      results[[group.level]] <- run.enrich(to.enrich = to.enrich, 
+                                           group.level = group.level,
+                                           species=species, 
+                                           category=category,
+                                           subcategory=subcategory,
+                                           ID.type=ID.type)
+    }
+    ##### Stop if no genes provided #####
   } else{
     stop("Please provide gene list or data frame.")
   }
   
-##### Save results #####
-  dir.create(outdir, showWarnings = FALSE)
-  
+  ##### Save results #####
   #combine list of df results
-  results.all <- plyr::ldply (results, data.frame) %>% 
-    dplyr::select(-'.id')
-  
-  #Make filename
-  if(is.null(basename) & is.null(subcategory)){ 
-    output.name <- category 
-    filename <- paste(outdir,"enrich_",output.name, ".csv", sep="")
-  } else if(is.null(basename) & !is.null(subcategory)){
-    output.name <- paste(category, gsub(":", ".", subcategory), sep="_")
-    filename <- paste(outdir,"enrich_",output.name, ".csv", sep="")
-  } else if(!is.null(basename) & is.null(subcategory)){
-    output.name <- paste(basename, category, sep="_") 
-    filename <- paste(outdir,"enrich_",
-                      output.name, ".csv", sep="")
-  } else{ 
-    output.name <- paste(basename, category, gsub(":", ".", subcategory),
-                         sep="_") 
-    filename <- paste(outdir, "enrich_",
-                      output.name, ".csv", sep="")
-  }
-  
-  #Save
-  write_csv(results.all, filename)
-  
+  results.all <- dplyr::bind_rows(results, .id = "column_label")
+  return(results.all)
 }
 
 ##### enrich function #####
 run.enrich <- function(to.enrich, group.level, 
-                     genome, category, subcategory, ID.type, ...){
+                       species, category, subcategory, ID.type, ...){
   
-  #Convert ENSEMBL IDs if needed
-  if(ID.type == "ENSEMBL"){
-    #Convert gene list to Entrez ID
-    gene.entrez <- clusterProfiler::bitr(to.enrich, fromType="ENSEMBL",
-                                         toType=c("ENTREZID","SYMBOL"),
-                                         OrgDb=genome)
-    
-    gene.entrez.list <- gene.entrez$ENTREZID
-  } else if(ID.type =="ENTREZ"){
-    gene.entrez <- clusterProfiler::bitr(to.enrich, fromType="ENTREZID",
-                                         toType=c("ENSEMBL","SYMBOL"),
-                                         OrgDb=genome)
-    gene.entrez.list <- to.enrich
-  } else if(ID.type == "SYMBOL"){
-    #Convert gene list to Entrez ID
-    gene.entrez <- clusterProfiler::bitr(to.enrich, fromType="SYMBOL",
-                                         toType=c("ENTREZID", "ENSEMBL"),
-                                         OrgDb=genome)
-    
-    gene.entrez.list <- gene.entrez$ENTREZID
-  }else{
-    stop("Function only allows HGNC symbols, ENSEMBL or ENTREZ IDs")
-  }
-  
-
   #Get database of interest
-  if(genome == "org.Hs.eg.db"){
-    
-    #No subcategory
-    if(is.null(subcategory)){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = category))
-    } else
-    # Combine all CP subs
-    if(subcategory == "CP"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C2",
-                                          subcategory = "CP:BIOCARTA")) %>% 
-        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                        category = "C2",
-                                        subcategory = "CP:KEGG"))) %>% 
-        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                        category = "C2",
-                                        subcategory = "CP:PID"))) %>% 
-        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                        category = "C2",
-                                        subcategory = "CP:REACTOME")))
-    } else if(subcategory == "CP:BIOCARTA"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C2",
-                                          subcategory = "CP:BIOCARTA"))
-    } else if(subcategory == "CP:KEGG"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C2",
-                                          subcategory = "CP:KEGG"))
-    } else if(subcategory == "CP:PID"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C2",
-                                          subcategory = "CP:PID"))
-    } else if(subcategory == "CP:REACTOME"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C2",
-                                          subcategory = "CP:REACTOME"))
-    } else
-      # Combine all GO subs
-      if(subcategory == "GO"){
-        db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                            category = "C5",
-                                            subcategory = "GO:MF")) %>% 
-          bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C5",
-                                          subcategory = "GO:BP"))) %>% 
-          bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C5",
-                                          subcategory = "GO:CC")))
-      } else if(subcategory=="GO:MF"){
-        db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                            category = "C5",
-                                            subcategory = "GO:MF"))
-    } else if(subcategory=="GO:BP"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C5",
-                                          subcategory = "GO:BP"))
-    } else if(subcategory=="GO:CC"){
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = "C5",
-                                          subcategory = "GO:CC")) %>% 
-        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                        category = "C5",
-                                        subcategory = "GO:BP"))) %>% 
-        bind_rows(as.data.frame(msigdbr(species = "Homo sapiens", 
-                                        category = "C5",
-                                        subcategory = "GO:CC")))
-    } else {
-      db.species <- as.data.frame(msigdbr(species = "Homo sapiens", 
-                                          category = category,
-                                          subcategory = subcategory))}
-    
-  } else if(genome$packageName == "org.Mm.eg.db"){
-    
-    if(is.null(subcategory)){
-      db.species <- as.data.frame(msigdbr(species = "Mus musculus",
-                                          category = category)) 
-    } else{
-      db.species <- as.data.frame(msigdbr(species = "Mus musculus",
-                                          category = category,
-                                          subcategory = subcategory)) 
-    }
-  } else{
-    stop("Function only available for human and mouse genomes.")
-  }
+  db.species <- as.data.frame(msigdbr(species = species, 
+                                      category = category,
+                                      subcategory = subcategory))
   
+  if(ID.type == "symbol"){
+    db.species2 <- dplyr::select(db.species, gs_name, gene_symbol)
+  } else if(ID.type == "ensembl"){
+    db.species2 <- dplyr::select(db.species, gs_name, ensembl_gene)
+  } else if(ID.type == "entrez"){
+    db.species2 <- dplyr::select(db.species, gs_name, entrez_gene)
+  } else (
+    stop("HGNC symbol, ENSEMBL, or ENTREZ ID only.")
+  )
   #run enrichment on gene list
-  enrich <- enricher(gene=gene.entrez.list, 
-                     TERM2GENE=dplyr::select(db.species, gs_name,
-                                             entrez_gene))
+  enrich.result <- clusterProfiler::enricher(gene=to.enrich, 
+                                             TERM2GENE=db.species2)
   
+  #handle no enrichment results
   if (is.null(enrich)){
     enrich.result.clean <- data.frame(
       Description="No enriched terms",
@@ -275,45 +148,23 @@ run.enrich <- function(to.enrich, group.level,
       enrich.result.clean <- enrich.result.clean %>% 
         mutate(subcategory=subcategory)
     }
-    
-   return(enrich.result.clean)
+    return(enrich.result.clean)
     
   }
   else{
-    #Extract results
-    enrich.result <- enrich@result %>% 
-      remove_rownames() %>% 
-      arrange(p.adjust, Count)
-    
-    #Create group names for entrez+number genes ID'ed
-    ## Use to separate list of entrez IDs if > 1 exist for a given term
-    pivot_names <- c()
-    for (i in 1:max(enrich.result$Count)){
-      pivot_names[[i]] <- paste("entrez", i, sep="")
-    }
-    
     #Format category labels
     db.species.clean <- db.species %>% 
       dplyr::select(gs_cat, gs_subcat, gs_name) %>% 
       dplyr::rename(category=gs_cat, subcategory=gs_subcat, 
                     Description=gs_name) %>% 
       distinct()
+    
     #Format results   
-    enrich.result.clean <- enrich.result %>% 
-      #Separate entrez ID lists
-      separate(geneID, into=as.character(pivot_names), sep="/") %>% 
-      pivot_longer(all_of(as.character(pivot_names)), names_to = "rep", 
-                   values_to = "ENTREZID") %>% 
-      drop_na(ENTREZID) %>% 
-      #Match entrez IDs to gene IDs
-      left_join(gene.entrez, by="ENTREZID") %>% 
-      
-      #Combine lists into single columns, sep by /
-      group_by_at(vars(ID:Count)) %>% 
-      dplyr::summarize(ENTREZIDs = paste(ENTREZID, collapse="/"),
-             SYMBOLs = paste(SYMBOL, collapse="/"),
-             ENSEMBLIDs = paste(ENSEMBL, collapse="/"),
-             .groups="drop") %>% 
+    #Format gene column to vector
+    enrich.result.clean <- enrich.result@result %>% 
+      remove_rownames() %>% 
+      arrange(p.adjust, Count) %>% 
+      mutate(geneID = strsplit(geneID, split="/")) %>% 
       #Extract values from ratios
       separate(BgRatio, into=c("size.term","size.category"), sep="/") %>% 
       separate(GeneRatio, into=c("size.overlap.term",
@@ -334,7 +185,7 @@ run.enrich <- function(to.enrich, group.level,
                     group, size.group, 
                     size.overlap.category, size.category,
                     Description, size.overlap.term, size.term, `k/K`,
-                    p.adjust, qvalue, ENTREZIDs:ENSEMBLIDs) %>% 
+                    p.adjust, qvalue, geneID) %>% 
       arrange(p.adjust)  
     
     return(enrich.result.clean)

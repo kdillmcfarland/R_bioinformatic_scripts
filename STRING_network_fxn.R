@@ -49,7 +49,7 @@ Saving plot
 #################
 string.plot <- function(genes, version="11", score_threshold=400,
                         layout='fr',
-                        enrichment=NULL, size.overlap.term=2, p.adjust=0.2,
+                        enrichment=NULL, overlap=2, FDR=0.2,
                         discard="none",
                         ID=c("SYMBOLs","ENTREZIDs","ENSEMBLIDs"),
                         colors=NULL, node.text.size=2, pie_scale=1,
@@ -88,7 +88,7 @@ string.plot <- function(genes, version="11", score_threshold=400,
     #Get significant enrichments
     col.mat <- enrichment %>% 
       ungroup() %>% 
-      dplyr::filter(size.overlap.term >= size.overlap.term & p.adjust <= p.adjust) %>% 
+      dplyr::filter(size.overlap.term >= overlap & p.adjust <= FDR) %>% 
       dplyr::select(Description, all_of(ID))
       
     #Error if no terms to plot
